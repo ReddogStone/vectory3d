@@ -1,0 +1,14 @@
+{
+  "name": "vectory3d",
+  "version": "0.0.1",
+  "description": "A 3D geometry application",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron main.js"
+  },
+  "author": "Elshad Shirinov",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "electron-prebuilt": ""
+  }
+}
