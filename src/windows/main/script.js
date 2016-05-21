@@ -11,18 +11,19 @@ const BlendMode = require('../../../jabaku/engine/blend-mode');
 const Geometry = require('../../../jabaku/engine/geometry');
 const mat4 = require('../../../jabaku/math/Matrix4');
 const vec3 = require('../../../jabaku/math/Vector3');
+const Transform = require('../../../jabaku/math/transform');
 
 const engine3d = require('../../../jabaku/engine/engine3d')(canvas, true);
 const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
 
 const texture = engine3d.createTextureFromFile('../../../data/textures/test.png');
 
-const cameraPos = vec3(1, 2, 2);
-const view = mat4.lookAt(cameraPos, vec3(0, 0, 0), vec3(0, 1, 0));
+let cameraPos = vec3(1, 2, 2);
+let view = mat4.lookAt(cameraPos, vec3(0, 0, 0), vec3(0, 1, 0));
+let projection = mat4.perspective(Math.PI / 2, canvas.width / canvas.height, 0.1, 1000.0);
+
 const world = mat4();
 const worldIT = world.clone().invert().transpose();
-
-let projection = mat4.perspective(Math.PI / 2, canvas.width / canvas.height, 0.1, 1000.0);
 
 const vertexShader = fs.readFileSync('jabaku/shaders/simple.vshader', 'utf8');
 const fragmentShader = fs.readFileSync('jabaku/shaders/simple.fshader', 'utf8');
@@ -45,7 +46,7 @@ requestAnimationFrame(function render() {
 
 		uTexture: {},
 		uPosCamera: cameraPos.toArray(),
-		uPosLight1: [-1, -1, 2.5],
+		uPosLight1: cameraPos.toArray(),
 		uColorLight1: [1, 1, 1],
 		uPosLight2: [0, 0, 0],
 		uColorLight2: [0, 0, 0],
@@ -58,6 +59,42 @@ requestAnimationFrame(function render() {
 	engine3d.renderDebugQuad(texture, 0, 0, 100, 100);
 	requestAnimationFrame(render);
 });
+
+function getMousePos(canvas, event) {
+	let rect = canvas.getBoundingClientRect();
+	return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+}
+
+function setCameraPos(value) {
+	cameraPos = value;
+	view = mat4.lookAt(cameraPos, vec3(0, 0, 0), vec3(0, 1, 0));
+}
+
+let move = null;
+canvas.addEventListener('mousedown', function(event) {
+	let pos = getMousePos(canvas, event);
+	move = pos;
+}, false);
+canvas.addEventListener('mousemove', function(event) {
+	if (move) {
+		let pos = getMousePos(canvas, event);
+		let dx = move.x - pos.x;
+		let dy = move.y - pos.y;
+		let camPos = Transform.rotateAroundTargetVert(cameraPos, vec3(0, 0, 0), vec3(0, 1, 0), dy * 0.006);
+		camPos = Transform.rotateAroundTargetHoriz(camPos, vec3(0, 0, 0), vec3(0, 1, 0), dx * 0.006);
+		setCameraPos(camPos);
+
+		move = pos;
+	}
+}, false);
+document.addEventListener('mouseup', function(event) {
+	move = null;
+}, false);
+
+canvas.addEventListener("mousewheel", function(event) {
+	setCameraPos(Transform.moveToTarget(cameraPos, vec3(0, 0, 0), 1 - event.wheelDelta * 0.001));
+}, false);
+
 
 function resizeCanvas() {
 	canvas.width = canvas.clientWidth;
