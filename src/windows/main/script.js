@@ -16,11 +16,10 @@ const Transform = require('../../../jabaku/math/transform');
 const engine3d = require('../../../jabaku/engine/engine3d')(canvas, true);
 const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
 
-const texture = engine3d.createTextureFromFile('../../../data/textures/test.png');
+const state = require('./state')(canvas);
+const behavior = require('./behavior')(state);
 
-let cameraPos = vec3(1, 2, 2);
-let view = mat4.lookAt(cameraPos, vec3(0, 0, 0), vec3(0, 1, 0));
-let projection = mat4.perspective(Math.PI / 2, canvas.width / canvas.height, 0.1, 1000.0);
+const texture = engine3d.createTextureFromFile('../../../data/textures/test.png');
 
 const world = mat4();
 const worldIT = world.clone().invert().transpose();
@@ -41,12 +40,12 @@ requestAnimationFrame(function render() {
 	engine3d.setProgram(program, {
 		uWorld: world.toArray(),
 		uWorldIT: worldIT.toArray(),
-		uView: view.toArray(),
-		uProjection: projection.toArray(),
+		uView: state.camera.view.toArray(),
+		uProjection: state.camera.projection.toArray(),
 
 		uTexture: {},
-		uPosCamera: cameraPos.toArray(),
-		uPosLight1: cameraPos.toArray(),
+		uPosCamera: state.camera.pos.toArray(),
+		uPosLight1: state.camera.pos.toArray(),
 		uColorLight1: [1, 1, 1],
 		uPosLight2: [0, 0, 0],
 		uColorLight2: [0, 0, 0],
@@ -65,11 +64,6 @@ function getMousePos(canvas, event) {
 	return { x: event.clientX - rect.left, y: event.clientY - rect.top };
 }
 
-function setCameraPos(value) {
-	cameraPos = value;
-	view = mat4.lookAt(cameraPos, vec3(0, 0, 0), vec3(0, 1, 0));
-}
-
 let move = null;
 canvas.addEventListener('mousedown', function(event) {
 	let pos = getMousePos(canvas, event);
@@ -80,9 +74,11 @@ canvas.addEventListener('mousemove', function(event) {
 		let pos = getMousePos(canvas, event);
 		let dx = move.x - pos.x;
 		let dy = move.y - pos.y;
-		let camPos = Transform.rotateAroundTargetVert(cameraPos, vec3(0, 0, 0), vec3(0, 1, 0), dy * 0.006);
-		camPos = Transform.rotateAroundTargetHoriz(camPos, vec3(0, 0, 0), vec3(0, 1, 0), dx * 0.006);
-		setCameraPos(camPos);
+
+		let cam = state.camera;
+		let newPos = Transform.rotateAroundTargetVert(cam.pos, cam.target, cam.up, dy * 0.006);
+		newPos = Transform.rotateAroundTargetHoriz(newPos, cam.target, cam.up, dx * 0.006);
+		state.camera.pos = newPos;
 
 		move = pos;
 	}
@@ -92,14 +88,14 @@ document.addEventListener('mouseup', function(event) {
 }, false);
 
 canvas.addEventListener("mousewheel", function(event) {
-	setCameraPos(Transform.moveToTarget(cameraPos, vec3(0, 0, 0), 1 - event.wheelDelta * 0.001));
+	state.camera.pos = Transform.moveToTarget(state.camera.pos, state.camera.target, 1 - event.wheelDelta * 0.001);
 }, false);
 
 
 function resizeCanvas() {
 	canvas.width = canvas.clientWidth;
 	canvas.height = canvas.clientHeight;
-	projection = mat4.perspective(Math.PI / 2, canvas.width / canvas.height, 0.1, 1000.0);	
+	state.camera.projection = mat4.perspective(Math.PI / 2, canvas.width / canvas.height, 0.1, 1000.0);	
 }
 
 window.addEventListener('resize', resizeCanvas, false);
