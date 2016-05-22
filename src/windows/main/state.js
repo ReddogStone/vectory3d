@@ -10,10 +10,15 @@ module.exports = function(canvas) {
 		pos: Store.source(vec3(1, 2, 2)),
 		target: Store.source(vec3(0, 0, 0)),
 		up: Store.source(vec3(0, 1, 0)),
-		projection: Store.source(mat4.perspective(Math.PI / 2, canvas.width / canvas.height, 0.1, 1000.0))
+
+		fov: Store.source(Math.PI / 2),
+		aspect: Store.source(canvas.width / canvas.height),
+		near: Store.source(0.1),
+		far: Store.source(1000.0)
 	};
 
 	const view = Store.dependent([camera.pos, camera.target, camera.up], mat4.lookAt);
+	const projection = Store.dependent([camera.fov, camera.aspect, camera.near, camera.far], mat4.perspective)
 
 	return {
 		camera: {
@@ -24,10 +29,17 @@ module.exports = function(canvas) {
 			get up() { return camera.up._value },
 			set up(value) { Store.transaction(set => set(camera.up, value)); },
 
-			get projection() { return camera.projection._value },
-			set projection(value) { Store.transaction(set => set(camera.projection, value)); },
+			get fov() { return camera.fov._value },
+			set fov(value) { Store.transaction(set => set(camera.fov, value)); },
+			get aspect() { return camera.aspect._value },
+			set aspect(value) { Store.transaction(set => set(camera.aspect, value)); },
+			get near() { return camera.near._value },
+			set near(value) { Store.transaction(set => set(camera.near, value)); },
+			get far() { return camera.far._value },
+			set far(value) { Store.transaction(set => set(camera.far, value)); },
 
-			get view() { return view._value }
+			get view() { return view._value },
+			get projection() { return projection._value }
 		}
 	};
 };

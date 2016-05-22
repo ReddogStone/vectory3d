@@ -9,7 +9,7 @@ module.exports = function(canvas, state) {
 	function resizeCanvas() {
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
-		state.camera.projection = mat4.perspective(Math.PI / 2, canvas.width / canvas.height, 0.1, 1000.0);	
+		state.camera.aspect = canvas.width / canvas.height;
 	}
 
 	resizeCanvas();
