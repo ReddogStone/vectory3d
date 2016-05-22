@@ -1,11 +1,11 @@
 'use strict';
 
+const mat4 = require('../../../jabaku/math/Matrix4');
+const vec3 = require('../../../jabaku/math/Vector3');
+
+const Store = require('../../framework/store');
+
 module.exports = function(canvas) {
-	const mat4 = require('../../../jabaku/math/Matrix4');
-	const vec3 = require('../../../jabaku/math/Vector3');
-
-	const Store = require('../../framework/store');
-
 	const camera = {
 		pos: Store.source(vec3(1, 2, 2)),
 		target: Store.source(vec3(0, 0, 0)),

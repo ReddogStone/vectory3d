@@ -17,7 +17,7 @@ const engine3d = require('../../../jabaku/engine/engine3d')(canvas, true);
 const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
 
 const state = require('./state')(canvas);
-const behavior = require('./behavior')(state);
+const behavior = require('./behavior')(canvas, state);
 
 const texture = engine3d.createTextureFromFile('../../../data/textures/test.png');
 
@@ -64,39 +64,11 @@ function getMousePos(canvas, event) {
 	return { x: event.clientX - rect.left, y: event.clientY - rect.top };
 }
 
-let move = null;
-canvas.addEventListener('mousedown', function(event) {
-	let pos = getMousePos(canvas, event);
-	move = pos;
-}, false);
-canvas.addEventListener('mousemove', function(event) {
-	if (move) {
-		let pos = getMousePos(canvas, event);
-		let dx = move.x - pos.x;
-		let dy = move.y - pos.y;
-
-		let cam = state.camera;
-		let newPos = Transform.rotateAroundTargetVert(cam.pos, cam.target, cam.up, dy * 0.006);
-		newPos = Transform.rotateAroundTargetHoriz(newPos, cam.target, cam.up, dx * 0.006);
-		state.camera.pos = newPos;
-
-		move = pos;
-	}
-}, false);
-document.addEventListener('mouseup', function(event) {
-	move = null;
-}, false);
-
-canvas.addEventListener("mousewheel", function(event) {
-	state.camera.pos = Transform.moveToTarget(state.camera.pos, state.camera.target, 1 - event.wheelDelta * 0.001);
-}, false);
-
-
-function resizeCanvas() {
-	canvas.width = canvas.clientWidth;
-	canvas.height = canvas.clientHeight;
-	state.camera.projection = mat4.perspective(Math.PI / 2, canvas.width / canvas.height, 0.1, 1000.0);	
+function mouseEvent(event) {
+	behavior({ type: event.type, pos: getMousePos(canvas, event) });
 }
-
-window.addEventListener('resize', resizeCanvas, false);
-resizeCanvas();
+canvas.addEventListener('mousedown', mouseEvent, false);
+canvas.addEventListener('mousemove', mouseEvent, false);
+document.addEventListener('mouseup', mouseEvent, false);
+canvas.addEventListener("mousewheel", function(event) { behavior({ type: 'mousewheel', delta: event.wheelDelta }); }, false);
+window.addEventListener('resize', function(event) { behavior({ type: 'resize' }); }, false);
