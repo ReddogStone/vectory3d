@@ -9,6 +9,7 @@
   "author": "Elshad Shirinov",
   "license": "UNLICENSED",
   "devDependencies": {
-    "electron-prebuilt": ""
+    "electron-prebuilt": "",
+    "katex": ">=0.6.0"
   }
 }
