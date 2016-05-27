@@ -6,12 +6,10 @@
 const fs = require('fs');
 
 const canvas = document.getElementById('screen');
-const Color = require('../../../jabaku/engine/color');
 const BlendMode = require('../../../jabaku/engine/blend-mode');
 const Geometry = require('../../../jabaku/engine/geometry');
 const mat4 = require('../../../jabaku/math/Matrix4');
 const vec3 = require('../../../jabaku/math/Vector3');
-const Transform = require('../../../jabaku/math/transform');
 
 const engine3d = require('../../../jabaku/engine/engine3d')(canvas, true);
 const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
@@ -49,9 +47,14 @@ requestAnimationFrame(function render() {
 		uColorLight1: [1, 1, 1],
 		uPosLight2: [0, 0, 0],
 		uColorLight2: [0, 0, 0],
-		uColor: [1, 1, 1, 1],
+		uColor: [0, 1, 1, 1],
 		uLuminosity: 0,
 		uAmbient: [0, 0, 0]
+	});
+	Mesh.render(program, cube);
+
+	engine3d.setProgramParameters(program.activeUniforms, {
+		uWorld: mat4().translate(vec3(1.3, 0.5, 0)).toArray()
 	});
 	Mesh.render(program, cube);
 
@@ -65,10 +68,18 @@ function getMousePos(canvas, event) {
 }
 
 function mouseEvent(event) {
-	behavior({ type: event.type, pos: getMousePos(canvas, event) });
+	// console.log(event.type, event.buttons);
+	behavior({ type: event.type, pos: getMousePos(canvas, event), buttons: event.buttons });
 }
 canvas.addEventListener('mousedown', mouseEvent, false);
 canvas.addEventListener('mousemove', mouseEvent, false);
 document.addEventListener('mouseup', mouseEvent, false);
 canvas.addEventListener("mousewheel", function(event) { behavior({ type: 'mousewheel', delta: event.wheelDelta }); }, false);
 window.addEventListener('resize', function(event) { behavior({ type: 'resize' }); }, false);
+
+const mathjs = require('mathjs');
+const input = document.getElementById('input');
+const formula = document.getElementById('formula');
+input.addEventListener('change', function(event) {
+	formula.innerHTML = mathjs.parse(input.value);
+}, false);

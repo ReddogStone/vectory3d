@@ -11,7 +11,7 @@ module.exports = function(canvas) {
 		target: Store.source(vec3(0, 0, 0)),
 		up: Store.source(vec3(0, 1, 0)),
 
-		fov: Store.source(Math.PI / 2),
+		fov: Store.source(Math.PI / 4),
 		aspect: Store.source(canvas.width / canvas.height),
 		near: Store.source(0.1),
 		far: Store.source(1000.0)

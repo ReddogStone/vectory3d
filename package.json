@@ -9,7 +9,10 @@
   "author": "Elshad Shirinov",
   "license": "UNLICENSED",
   "devDependencies": {
-    "electron-prebuilt": "",
-    "katex": ">=0.6.0"
+    "electron-prebuilt": ""
+  },
+  "dependencies": {
+    "katex": ">=0.6.0",
+    "mathjs": "^3.2.1"
   }
 }
