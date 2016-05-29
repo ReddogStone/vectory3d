@@ -24,9 +24,9 @@ const vertexShader = fs.readFileSync('jabaku/shaders/simple.vshader', 'utf8');
 const fragmentShader = fs.readFileSync('jabaku/shaders/simple.fshader', 'utf8');
 const program = engine3d.createProgram(vertexShader, fragmentShader, 'simple');
 
-const sphere = Mesh.make(Geometry.createSphereData());
-const cylinder = Mesh.make(Geometry.createCylinderData());
-const quad = Mesh.make(Geometry.createQuadData());
+const sphereMesh = Mesh.make(Geometry.createSphereData(20));
+const cylinderMesh = Mesh.make(Geometry.createCylinderData());
+const quadMesh = Mesh.make(Geometry.createQuadData());
 
 engine3d.setClearColor(0.2, 0.2, 0.2, 1);
 
@@ -61,7 +61,7 @@ requestAnimationFrame(function render() {
 			uWorldIT: worldIT.toArray()
 		});
 
-		Mesh.render(program, sphere);
+		Mesh.render(program, sphereMesh);
 	});
 
 	Object.keys(state.lines.objects).forEach(function(id) {
@@ -76,7 +76,7 @@ requestAnimationFrame(function render() {
 			uWorldIT: worldIT.toArray()
 		});
 
-		Mesh.render(program, cylinder);
+		Mesh.render(program, cylinderMesh);
 	});
 
 	Object.keys(state.planes.objects).forEach(function(id) {
@@ -92,7 +92,21 @@ requestAnimationFrame(function render() {
 			uWorldIT: worldIT.toArray()
 		});
 
-		Mesh.render(program, quad);
+		Mesh.render(program, quadMesh);
+	});
+
+	Object.keys(state.spheres.objects).forEach(function(id) {
+		let sphere = state.spheres.objects[id];
+
+		let world = mat4().translate(sphere.center).scale(vec3(1, 1, 1).scale(sphere.radius));
+		let worldIT = world.clone().invert().transpose();
+
+		engine3d.setProgramParameters(program.activeUniforms, {
+			uWorld: world.toArray(),
+			uWorldIT: worldIT.toArray()
+		});
+
+		Mesh.render(program, sphereMesh);
 	});
 
 	engine3d.renderDebugQuad(texture, 0, 0, 100, 100);
@@ -127,3 +141,4 @@ behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 1, 0])' });
 behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 0, 1])' });
 behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 0], [1, 0, 0], [0, 1, 0])' });
 behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 1], [-1, 0, 0], [0, 1, 0])' });
+behavior({ type: 'consoleInput', value: 'sphere([0, 0, 3], 2)' });

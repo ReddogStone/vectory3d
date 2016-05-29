@@ -160,6 +160,22 @@ module.exports = function(canvas, state) {
 				let id = addObject('P', state.planes, obj);
 				obj.name = name || id;
 				return id;
+			},
+			sphere: function(p, r, name) {
+				console.log(`Sphere: center: ${p}, radius: ${r}, name=${name}`);
+
+				p = p.valueOf();
+				assert(Array.isArray(p) && (p.length === 3), "Center has to be a 3-component vector");
+				assert(r > 0, "Radius has to be greater than 0");
+
+				let obj = {
+					center: vec3(...p),
+					radius: r,
+					expression: expression
+				};
+				let id = addObject('S', state.spheres, obj);
+				obj.name = name || id;
+				return id;
 			}
 		});
 	};

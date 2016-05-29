@@ -7,7 +7,7 @@ const Store = require('../../framework/store');
 
 module.exports = function(canvas) {
 	const camera = {
-		pos: Store.source(vec3(1, 2, 2)),
+		pos: Store.source(vec3(4, 8, 8)),
 		target: Store.source(vec3(0, 0, 0)),
 		up: Store.source(vec3(0, 1, 0)),
 
@@ -50,6 +50,10 @@ module.exports = function(canvas) {
 			objects: {}
 		},
 		planes: {
+			nextIndex: 1,
+			objects: {}
+		},
+		spheres: {
 			nextIndex: 1,
 			objects: {}
 		}
