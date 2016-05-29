@@ -20,6 +20,15 @@ const behavior = require('./behavior')(canvas, state);
 
 const texture = engine3d.createTextureFromFile('../../../data/textures/test.png');
 
+let emptyCanvas = document.createElement('canvas');
+emptyCanvas.width = 1;
+emptyCanvas.height = 1;
+let context = emptyCanvas.getContext('2d');
+context.fillStyle = 'white';
+context.fillRect(0, 0, emptyCanvas.width, emptyCanvas.height);
+
+const emptyTexture = engine3d.createTexture(emptyCanvas);
+
 const vertexShader = fs.readFileSync('jabaku/shaders/simple.vshader', 'utf8');
 const fragmentShader = fs.readFileSync('jabaku/shaders/simple.fshader', 'utf8');
 const program = engine3d.createProgram(vertexShader, fragmentShader, 'simple');
@@ -39,7 +48,7 @@ requestAnimationFrame(function render() {
 		uView: state.camera.view.toArray(),
 		uProjection: state.camera.projection.toArray(),
 
-		uTexture: {},
+		uTexture: { texture: emptyTexture },
 		uPosCamera: state.camera.pos.toArray(),
 		uPosLight1: state.camera.pos.toArray(),
 		uColorLight1: [1, 1, 1],
