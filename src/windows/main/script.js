@@ -8,6 +8,7 @@ const fs = require('fs');
 const canvas = document.getElementById('screen');
 const BlendMode = require('../../../jabaku/engine/blend-mode');
 const Geometry = require('../../../jabaku/engine/geometry');
+const Color = require('../../../jabaku/engine/color');
 const mat4 = require('../../../jabaku/math/Matrix4');
 const vec3 = require('../../../jabaku/math/Vector3');
 const quat = require('../../../jabaku/math/Quaternion');
@@ -81,6 +82,7 @@ requestAnimationFrame(function render() {
 		let worldIT = world.clone().invert().transpose();
 
 		engine3d.setProgramParameters(program.activeUniforms, {
+			uColor: Color.toArray4(line.color),
 			uWorld: world.toArray(),
 			uWorldIT: worldIT.toArray()
 		});
@@ -97,6 +99,7 @@ requestAnimationFrame(function render() {
 		let worldIT = world.clone().invert().transpose();
 
 		engine3d.setProgramParameters(program.activeUniforms, {
+			uColor: Color.toArray4(plane.color),
 			uWorld: world.toArray(),
 			uWorldIT: worldIT.toArray()
 		});
@@ -111,6 +114,7 @@ requestAnimationFrame(function render() {
 		let worldIT = world.clone().invert().transpose();
 
 		engine3d.setProgramParameters(program.activeUniforms, {
+			uColor: Color.toArray4(sphere.color),
 			uWorld: world.toArray(),
 			uWorldIT: worldIT.toArray()
 		});

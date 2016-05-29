@@ -7,6 +7,7 @@ const Behavior = require('../../../framework/behavior');
 const vec3 = require('../../../../jabaku/math/Vector3');
 const mat4 = require('../../../../jabaku/math/Matrix4');
 const Transform = require('../../../../jabaku/math/transform');
+const Color = require('../../../../jabaku/engine/color');
 
 const mathjs = require('mathjs');
 
@@ -114,8 +115,8 @@ module.exports = function(canvas, state) {
 				obj.name = name || id;
 				return id;
 			},
-			line2Points: function(p1, p2, name) {
-				console.log(`Line 2 Points: ${p1}, ${p2}, name=${name}`);
+			line2Points: function(p1, p2, color, name) {
+				console.log(`Line 2 Points: ${p1}, ${p2}, color=${color}, name=${name}`);
 
 				p1 = p1.valueOf();
 				p2 = p2.valueOf();
@@ -128,14 +129,15 @@ module.exports = function(canvas, state) {
 				let obj = {
 					pos: pos,
 					dir: dir,
+					color: color ? Color(color) : Color.random(),
 					expression: expression
 				};
 				let id = addObject('L', state.lines, obj);
 				obj.name = name || id;
 				return id;
 			},
-			plane3Points: function(p1, p2, p3, name) {
-				console.log(`Plane 3 Points: ${p1}, ${p2}, ${p3}, name=${name}`);
+			plane3Points: function(p1, p2, p3, color, name) {
+				console.log(`Plane 3 Points: ${p1}, ${p2}, ${p3}, color=${color}, name=${name}`);
 
 				p1 = p1.valueOf();
 				p2 = p2.valueOf();
@@ -155,14 +157,15 @@ module.exports = function(canvas, state) {
 				let obj = {
 					normal: n,
 					distance: d,
+					color: color ? Color(color) : Color.random(),
 					expression: expression
 				};
 				let id = addObject('P', state.planes, obj);
 				obj.name = name || id;
 				return id;
 			},
-			sphere: function(p, r, name) {
-				console.log(`Sphere: center: ${p}, radius: ${r}, name=${name}`);
+			sphere: function(p, r, color, name) {
+				console.log(`Sphere: center: ${p}, radius: ${r}, color=${color}, name=${name}`);
 
 				p = p.valueOf();
 				assert(Array.isArray(p) && (p.length === 3), "Center has to be a 3-component vector");
@@ -171,6 +174,7 @@ module.exports = function(canvas, state) {
 				let obj = {
 					center: vec3(...p),
 					radius: r,
+					color: color ? Color(color) : Color.random(),
 					expression: expression
 				};
 				let id = addObject('S', state.spheres, obj);
