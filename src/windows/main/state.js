@@ -48,6 +48,10 @@ module.exports = function(canvas) {
 		lines: {
 			nextIndex: 1,
 			objects: {}
+		},
+		planes: {
+			nextIndex: 1,
+			objects: {}
 		}
 	};
 };

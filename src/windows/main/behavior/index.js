@@ -133,6 +133,33 @@ module.exports = function(canvas, state) {
 				let id = addObject('L', state.lines, obj);
 				obj.name = name || id;
 				return id;
+			},
+			plane3Points: function(p1, p2, p3, name) {
+				console.log(`Plane 3 Points: ${p1}, ${p2}, ${p3}, name=${name}`);
+
+				p1 = p1.valueOf();
+				p2 = p2.valueOf();
+				p3 = p3.valueOf();
+				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
+				assert(Array.isArray(p2) && (p2.length === 3), "P2 has to be a 3-component vector");
+				assert(Array.isArray(p3) && (p3.length === 3), "P3 has to be a 3-component vector");
+
+				let point1 = vec3(...p1);
+				let point2 = vec3(...p2);
+				let point3 = vec3(...p3);
+				let v1 = point2.sub(point1);
+				let v2 = point3.sub(point1);
+				let n = v1.cross(v2).normalize();
+				let d = n.dot(point1);
+
+				let obj = {
+					normal: n,
+					distance: d,
+					expression: expression
+				};
+				let id = addObject('P', state.planes, obj);
+				obj.name = name || id;
+				return id;
 			}
 		});
 	};

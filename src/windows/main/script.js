@@ -26,6 +26,7 @@ const program = engine3d.createProgram(vertexShader, fragmentShader, 'simple');
 
 const sphere = Mesh.make(Geometry.createSphereData());
 const cylinder = Mesh.make(Geometry.createCylinderData());
+const quad = Mesh.make(Geometry.createQuadData());
 
 engine3d.setClearColor(0.2, 0.2, 0.2, 1);
 
@@ -67,7 +68,7 @@ requestAnimationFrame(function render() {
 		let line = state.lines.objects[id];
 
 		let rotation = quat.rotationTo(vec3(0, 0, 1), line.dir);
-		let world = mat4.fromRotationTranslation(rotation, line.pos).scale(vec3(0.03, 0.03, 10.0));
+		let world = mat4.fromRotationTranslation(rotation, line.pos).scale(vec3(0.03, 0.03, 5.0));
 		let worldIT = world.clone().invert().transpose();
 
 		engine3d.setProgramParameters(program.activeUniforms, {
@@ -76,6 +77,22 @@ requestAnimationFrame(function render() {
 		});
 
 		Mesh.render(program, cylinder);
+	});
+
+	Object.keys(state.planes.objects).forEach(function(id) {
+		let plane = state.planes.objects[id];
+
+		let rotation = quat.rotationTo(vec3(0, 0, 1), plane.normal);
+		let pos = plane.normal.clone().scale(plane.distance);
+		let world = mat4.fromRotationTranslation(rotation, pos).scale(vec3(5.0, 5.0, 1));
+		let worldIT = world.clone().invert().transpose();
+
+		engine3d.setProgramParameters(program.activeUniforms, {
+			uWorld: world.toArray(),
+			uWorldIT: worldIT.toArray()
+		});
+
+		Mesh.render(program, quad);
 	});
 
 	engine3d.renderDebugQuad(texture, 0, 0, 100, 100);
@@ -108,3 +125,5 @@ behavior({ type: 'consoleInput', value: 'point(0, 0, 0)' });
 behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [1, 0, 0])' });
 behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 1, 0])' });
 behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 0, 1])' });
+behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 0], [1, 0, 0], [0, 1, 0])' });
+behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 1], [-1, 0, 0], [0, 1, 0])' });
