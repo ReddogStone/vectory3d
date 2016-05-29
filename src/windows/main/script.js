@@ -53,7 +53,7 @@ requestAnimationFrame(function render() {
 	Object.keys(state.points.objects).forEach(function(id) {
 		let point = state.points.objects[id];
 
-		let world = mat4().translate(point.pos).scale(vec3(1, 1, 1).scale(0.03));
+		let world = mat4().translate(point.pos).scale(vec3(1, 1, 1).scale(0.08));
 		let worldIT = world.clone().invert().transpose();
 
 		engine3d.setProgramParameters(program.activeUniforms, {
@@ -68,7 +68,7 @@ requestAnimationFrame(function render() {
 		let line = state.lines.objects[id];
 
 		let rotation = quat.rotationTo(vec3(0, 0, 1), line.dir);
-		let world = mat4.fromRotationTranslation(rotation, line.pos).scale(vec3(0.03, 0.03, 5.0));
+		let world = mat4.fromRotationTranslation(rotation, line.pos).scale(vec3(0.05, 0.05, 10.0));
 		let worldIT = world.clone().invert().transpose();
 
 		engine3d.setProgramParameters(program.activeUniforms, {
@@ -84,7 +84,7 @@ requestAnimationFrame(function render() {
 
 		let rotation = quat.rotationTo(vec3(0, 0, 1), plane.normal);
 		let pos = plane.normal.clone().scale(plane.distance);
-		let world = mat4.fromRotationTranslation(rotation, pos).scale(vec3(5.0, 5.0, 1));
+		let world = mat4.fromRotationTranslation(rotation, pos).scale(vec3(10.0, 10.0, 1));
 		let worldIT = world.clone().invert().transpose();
 
 		engine3d.setProgramParameters(program.activeUniforms, {
