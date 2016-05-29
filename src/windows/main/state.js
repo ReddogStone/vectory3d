@@ -44,6 +44,10 @@ module.exports = function(canvas) {
 		points: {
 			nextIndex: 1,
 			objects: {}
+		},
+		lines: {
+			nextIndex: 1,
+			objects: {}
 		}
 	};
 };

@@ -80,7 +80,12 @@ function run(generatorFunc) {
 	return function(event) {
 		var res = current(event);
 		while (res.done) {
-			var res = gen.next(res.value);
+			try {
+				var res = gen.next(res.value);
+			} catch (e) {
+				console.log(e.stack);
+				throw e;
+			}
 			if (res.done) { return res; }
 
 			current = res.value;

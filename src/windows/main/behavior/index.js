@@ -1,5 +1,7 @@
 'use strict';
 
+const assert = require('assert');
+
 const Behavior = require('../../../framework/behavior');
 
 const vec3 = require('../../../../jabaku/math/Vector3');
@@ -106,13 +108,33 @@ module.exports = function(canvas, state) {
 				console.log(`Create Point: (${x}, ${y}, ${z}), name=${name}`);
 				let obj = {
 					pos: vec3(x, y, z),
-					name: name,
 					expression: expression
 				};
-				return addObject('P', state.points, obj);
+				let id = addObject('P', state.points, obj);
+				obj.name = name || id;
+				return id;
+			},
+			line2Points: function(p1, p2, name) {
+				console.log(`Line 2 Points: ${p1}, ${p2}, name=${name}`);
+
+				p1 = p1.valueOf();
+				p2 = p2.valueOf();
+				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
+				assert(Array.isArray(p2) && (p2.length === 3), "P2 has to be a 3-component vector");
+
+				let pos = vec3(...p1);
+				let dir = vec3(...p2).sub(pos).normalize();
+
+				let obj = {
+					pos: pos,
+					dir: dir,
+					expression: expression
+				};
+				let id = addObject('L', state.lines, obj);
+				obj.name = name || id;
+				return id;
 			}
 		});
-		console.log('RES:', result);
 	};
 
 	return Behavior.first(

@@ -10,6 +10,7 @@ const BlendMode = require('../../../jabaku/engine/blend-mode');
 const Geometry = require('../../../jabaku/engine/geometry');
 const mat4 = require('../../../jabaku/math/Matrix4');
 const vec3 = require('../../../jabaku/math/Vector3');
+const quat = require('../../../jabaku/math/Quaternion');
 
 const engine3d = require('../../../jabaku/engine/engine3d')(canvas, true);
 const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
@@ -24,6 +25,7 @@ const fragmentShader = fs.readFileSync('jabaku/shaders/simple.fshader', 'utf8');
 const program = engine3d.createProgram(vertexShader, fragmentShader, 'simple');
 
 const sphere = Mesh.make(Geometry.createSphereData());
+const cylinder = Mesh.make(Geometry.createCylinderData());
 
 engine3d.setClearColor(0.2, 0.2, 0.2, 1);
 
@@ -61,6 +63,21 @@ requestAnimationFrame(function render() {
 		Mesh.render(program, sphere);
 	});
 
+	Object.keys(state.lines.objects).forEach(function(id) {
+		let line = state.lines.objects[id];
+
+		let rotation = quat.rotationTo(vec3(0, 0, 1), line.dir);
+		let world = mat4.fromRotationTranslation(rotation, line.pos).scale(vec3(0.03, 0.03, 10.0));
+		let worldIT = world.clone().invert().transpose();
+
+		engine3d.setProgramParameters(program.activeUniforms, {
+			uWorld: world.toArray(),
+			uWorldIT: worldIT.toArray()
+		});
+
+		Mesh.render(program, cylinder);
+	});
+
 	engine3d.renderDebugQuad(texture, 0, 0, 100, 100);
 	requestAnimationFrame(render);
 });
@@ -87,4 +104,7 @@ input.addEventListener('keypress', function(event) {
 	}
 }, false);
 
-behavior({ type: 'consoleInput', value: 'point(0, 0, 0, "P1")' });
+behavior({ type: 'consoleInput', value: 'point(0, 0, 0)' });
+behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [1, 0, 0])' });
+behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 1, 0])' });
+behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 0, 1])' });
