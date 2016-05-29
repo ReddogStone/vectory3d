@@ -1,10 +1,12 @@
 'use strict';
 
-const Behavior = require('../../framework/behavior');
+const Behavior = require('../../../framework/behavior');
 
-const vec3 = require('../../../jabaku/math/Vector3');
-const mat4 = require('../../../jabaku/math/Matrix4');
-const Transform = require('../../../jabaku/math/transform');
+const vec3 = require('../../../../jabaku/math/Vector3');
+const mat4 = require('../../../../jabaku/math/Matrix4');
+const Transform = require('../../../../jabaku/math/transform');
+
+const mathjs = require('mathjs');
 
 module.exports = function(canvas, state) {
 	function resizeCanvas() {
@@ -89,10 +91,35 @@ module.exports = function(canvas, state) {
 		);
 	};
 
+	function addObject(prefix, container, obj) {
+		let index = container.nextIndex++;
+		obj.id = `#{${prefix}${index}}`;
+		container.objects[obj.id] = obj;
+		return obj.id;
+	}
+
+	const instruction = function*() {
+		let event = yield Behavior.type('consoleInput');
+		let expression = event.value;
+		let result = mathjs.eval(expression, {
+			point: function(x, y, z, name) {
+				console.log(`Create Point: (${x}, ${y}, ${z}), name=${name}`);
+				let obj = {
+					pos: vec3(x, y, z),
+					name: name,
+					expression: expression
+				};
+				return addObject('P', state.points, obj);
+			}
+		});
+		console.log('RES:', result);
+	};
+
 	return Behavior.first(
 		Behavior.repeat(resize),
 		Behavior.repeat(zoom),
 		Behavior.repeat(rotate),
-		Behavior.repeat(pan)
+		Behavior.repeat(pan),
+		Behavior.repeat(instruction)
 	);
 };

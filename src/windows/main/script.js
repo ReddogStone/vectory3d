@@ -19,14 +19,11 @@ const behavior = require('./behavior')(canvas, state);
 
 const texture = engine3d.createTextureFromFile('../../../data/textures/test.png');
 
-const world = mat4();
-const worldIT = world.clone().invert().transpose();
-
 const vertexShader = fs.readFileSync('jabaku/shaders/simple.vshader', 'utf8');
 const fragmentShader = fs.readFileSync('jabaku/shaders/simple.fshader', 'utf8');
 const program = engine3d.createProgram(vertexShader, fragmentShader, 'simple');
 
-const cube = Mesh.make(Geometry.createCubeData());
+const sphere = Mesh.make(Geometry.createSphereData());
 
 engine3d.setClearColor(0.2, 0.2, 0.2, 1);
 
@@ -36,8 +33,6 @@ requestAnimationFrame(function render() {
 	engine3d.setViewport(0, 0, canvas.width, canvas.height);
 	engine3d.setBlendMode(BlendMode.SOLID);
 	engine3d.setProgram(program, {
-		uWorld: world.toArray(),
-		uWorldIT: worldIT.toArray(),
 		uView: state.camera.view.toArray(),
 		uProjection: state.camera.projection.toArray(),
 
@@ -47,16 +42,24 @@ requestAnimationFrame(function render() {
 		uColorLight1: [1, 1, 1],
 		uPosLight2: [0, 0, 0],
 		uColorLight2: [0, 0, 0],
-		uColor: [0, 1, 1, 1],
+		uColor: [0.2, 0.7, 1, 1],
 		uLuminosity: 0,
 		uAmbient: [0, 0, 0]
 	});
-	Mesh.render(program, cube);
 
-	engine3d.setProgramParameters(program.activeUniforms, {
-		uWorld: mat4().translate(vec3(1.3, 0.5, 0)).toArray()
+	Object.keys(state.points.objects).forEach(function(id) {
+		let point = state.points.objects[id];
+
+		let world = mat4().translate(point.pos).scale(vec3(1, 1, 1).scale(0.03));
+		let worldIT = world.clone().invert().transpose();
+
+		engine3d.setProgramParameters(program.activeUniforms, {
+			uWorld: world.toArray(),
+			uWorldIT: worldIT.toArray()
+		});
+
+		Mesh.render(program, sphere);
 	});
-	Mesh.render(program, cube);
 
 	engine3d.renderDebugQuad(texture, 0, 0, 100, 100);
 	requestAnimationFrame(render);
@@ -77,9 +80,11 @@ document.addEventListener('mouseup', mouseEvent, false);
 canvas.addEventListener("mousewheel", function(event) { behavior({ type: 'mousewheel', delta: event.wheelDelta }); }, false);
 window.addEventListener('resize', function(event) { behavior({ type: 'resize' }); }, false);
 
-const mathjs = require('mathjs');
 const input = document.getElementById('input');
-const formula = document.getElementById('formula');
-input.addEventListener('change', function(event) {
-	formula.innerHTML = mathjs.parse(input.value);
+input.addEventListener('keypress', function(event) {
+	if (event.keyCode === 13) {
+		behavior({ type: 'consoleInput', value: event.target.value });
+	}
 }, false);
+
+behavior({ type: 'consoleInput', value: 'point(0, 0, 0, "P1")' });

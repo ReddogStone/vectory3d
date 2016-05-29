@@ -40,6 +40,10 @@ module.exports = function(canvas) {
 
 			get view() { return view._value },
 			get projection() { return projection._value }
+		},
+		points: {
+			nextIndex: 1,
+			objects: {}
 		}
 	};
 };
