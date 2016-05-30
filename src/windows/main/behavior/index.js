@@ -105,24 +105,20 @@ module.exports = function(canvas, state) {
 		return obj.id;
 	}
 
-	const instruction = function*() {
-		let event = yield Behavior.type('consoleInput');
-		let expression = event.value;
-
-		let node = mathjs.parse(expression);
-
-		let result = mathjs.eval(expression, {
-			point: function(x, y, z, color, name) {
-				console.log(`Create Point: (${x}, ${y}, ${z}), name=${name}`);
-				let obj = {
-					pos: vec3(x, y, z),
-					expression: expression
-				};
-				return addObject('P', state.points, obj, color, name);
-			},
-			line2Points: function(p1, p2, color, name) {
-				console.log(`Line 2 Points: ${p1}, ${p2}, color=${color}, name=${name}`);
-
+	const factories = {
+		point: {
+			prefix: 'P',
+			container: state.points,
+			argumentCount: 3,
+			update: function(obj, x, y, z) {
+				obj.pos = vec3(x, y, z);
+			}
+		},
+		line2Points: {
+			prefix: 'L',
+			container: state.lines,
+			argumentCount: 2,
+			update: function(obj, p1, p2) {
 				p1 = p1.valueOf();
 				p2 = p2.valueOf();
 				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
@@ -131,16 +127,15 @@ module.exports = function(canvas, state) {
 				let pos = vec3(...p1);
 				let dir = vec3(...p2).sub(pos).normalize();
 
-				let obj = {
-					pos: pos,
-					dir: dir,
-					expression: expression
-				};
-				return addObject('L', state.lines, obj, color, name);
-			},
-			plane3Points: function(p1, p2, p3, color, name) {
-				console.log(`Plane 3 Points: ${p1}, ${p2}, ${p3}, color=${color}, name=${name}`);
-
+				obj.pos = pos;
+				obj.dir = dir;
+			}
+		},
+		plane3Points: {
+			prefix: 'P',
+			container: state.planes,
+			argumentCount: 3,
+			update: function(obj, p1, p2, p3) {
 				p1 = p1.valueOf();
 				p2 = p2.valueOf();
 				p3 = p3.valueOf();
@@ -156,28 +151,53 @@ module.exports = function(canvas, state) {
 				let n = v1.cross(v2).normalize();
 				let d = n.dot(point1);
 
-				let obj = {
-					normal: n,
-					distance: d,
-					expression: expression
-				};
-				return addObject('P', state.planes, obj, color, name);
-			},
-			sphere: function(p, r, color, name) {
-				console.log(`Sphere: center: ${p}, radius: ${r}, color=${color}, name=${name}`);
-
+				obj.normal = n;
+				obj.distance = d;
+			}
+		},
+		sphere: {
+			prefix: 'S',
+			container: state.spheres,
+			argumentCount: 2,
+			update: function(obj, p, r) {
 				p = p.valueOf();
 				assert(Array.isArray(p) && (p.length === 3), "Center has to be a 3-component vector");
 				assert(r > 0, "Radius has to be greater than 0");
 
-				let obj = {
-					center: vec3(...p),
-					radius: r,
-					expression: expression
-				};
-				return addObject('S', state.spheres, obj, color, name);
+				obj.center = vec3(...p);
+				obj.radius = r;
 			}
-		});
+		}
+	};
+
+	const instruction = function*() {
+		let event = yield Behavior.type('consoleInput');
+		let expression = event.value;
+
+		let node = mathjs.parse(expression);
+		if (node instanceof mathjs.expression.node.FunctionNode) {
+			let instructionName = node.name;
+			if (!(instructionName in factories)) {
+				throw new Error(`Unsupported instruction "${instructionName}"`);
+			}
+
+			let factory = factories[instructionName];
+
+			assert(node.args.length >= factory.argumentCount, `"${instructionName}" needs ${factory.argumentCount} parameters`);
+
+			let obj = {
+				args: node.args.slice(0, factory.argumentCount)
+			};
+			factory.update(obj, ...obj.args.map(arg => arg.eval()));
+
+			let color = node.args[factory.argumentCount];
+			let name = node.args[factory.argumentCount + 1];
+			let res = addObject(factory.prefix, factory.container, obj, color && color.eval(), name && name.eval());
+			console.log(obj);
+			return res;
+		}
+
+		throw new Error('Only supporting function calls currently');
 	};
 
 	return Behavior.first(
