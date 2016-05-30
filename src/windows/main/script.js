@@ -67,6 +67,7 @@ requestAnimationFrame(function render() {
 		let worldIT = world.clone().invert().transpose();
 
 		engine3d.setProgramParameters(program.activeUniforms, {
+			uColor: Color.toArray4(point.color),
 			uWorld: world.toArray(),
 			uWorldIT: worldIT.toArray()
 		});

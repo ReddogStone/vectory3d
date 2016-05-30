@@ -94,9 +94,13 @@ module.exports = function(canvas, state) {
 		);
 	};
 
-	function addObject(prefix, container, obj) {
+	function addObject(prefix, container, obj, color, name) {
 		let index = container.nextIndex++;
+		
 		obj.id = `#{${prefix}${index}}`;
+		obj.name = name || obj.id;
+		obj.color = color ? Color(color) : Color.random();
+
 		container.objects[obj.id] = obj;
 		return obj.id;
 	}
@@ -104,16 +108,17 @@ module.exports = function(canvas, state) {
 	const instruction = function*() {
 		let event = yield Behavior.type('consoleInput');
 		let expression = event.value;
+
+		let node = mathjs.parse(expression);
+
 		let result = mathjs.eval(expression, {
-			point: function(x, y, z, name) {
+			point: function(x, y, z, color, name) {
 				console.log(`Create Point: (${x}, ${y}, ${z}), name=${name}`);
 				let obj = {
 					pos: vec3(x, y, z),
 					expression: expression
 				};
-				let id = addObject('P', state.points, obj);
-				obj.name = name || id;
-				return id;
+				return addObject('P', state.points, obj, color, name);
 			},
 			line2Points: function(p1, p2, color, name) {
 				console.log(`Line 2 Points: ${p1}, ${p2}, color=${color}, name=${name}`);
@@ -129,12 +134,9 @@ module.exports = function(canvas, state) {
 				let obj = {
 					pos: pos,
 					dir: dir,
-					color: color ? Color(color) : Color.random(),
 					expression: expression
 				};
-				let id = addObject('L', state.lines, obj);
-				obj.name = name || id;
-				return id;
+				return addObject('L', state.lines, obj, color, name);
 			},
 			plane3Points: function(p1, p2, p3, color, name) {
 				console.log(`Plane 3 Points: ${p1}, ${p2}, ${p3}, color=${color}, name=${name}`);
@@ -157,12 +159,9 @@ module.exports = function(canvas, state) {
 				let obj = {
 					normal: n,
 					distance: d,
-					color: color ? Color(color) : Color.random(),
 					expression: expression
 				};
-				let id = addObject('P', state.planes, obj);
-				obj.name = name || id;
-				return id;
+				return addObject('P', state.planes, obj, color, name);
 			},
 			sphere: function(p, r, color, name) {
 				console.log(`Sphere: center: ${p}, radius: ${r}, color=${color}, name=${name}`);
@@ -174,12 +173,9 @@ module.exports = function(canvas, state) {
 				let obj = {
 					center: vec3(...p),
 					radius: r,
-					color: color ? Color(color) : Color.random(),
 					expression: expression
 				};
-				let id = addObject('S', state.spheres, obj);
-				obj.name = name || id;
-				return id;
+				return addObject('S', state.spheres, obj, color, name);
 			}
 		});
 	};
