@@ -149,10 +149,10 @@ input.addEventListener('keypress', function(event) {
 	}
 }, false);
 
-behavior({ type: 'consoleInput', value: 'point(0, 0, 0)' });
-behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [1, 0, 0])' });
-behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 1, 0])' });
-behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 0, 1])' });
-behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 0], [1, 0, 0], [0, 1, 0])' });
-behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 1], [-1, 0, 0], [0, 1, 0])' });
-behavior({ type: 'consoleInput', value: 'sphere([0, 0, 3], 2)' });
+// behavior({ type: 'consoleInput', value: 'point(0, 0, 0)' });
+// behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [1, 0, 0])' });
+// behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 1, 0])' });
+// behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 0, 1])' });
+// behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 0], [1, 0, 0], [0, 1, 0])' });
+// behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 1], [-1, 0, 0], [0, 1, 0])' });
+// behavior({ type: 'consoleInput', value: 'sphere([0, 0, 3], 2)' });

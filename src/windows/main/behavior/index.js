@@ -97,7 +97,7 @@ module.exports = function(canvas, state) {
 	function addObject(prefix, container, obj, color, name) {
 		let index = container.nextIndex++;
 		
-		obj.id = `#{${prefix}${index}}`;
+		obj.id = `${prefix}${index}`;
 		obj.name = name || obj.id;
 		obj.color = color ? Color(color) : Color.random();
 
@@ -119,8 +119,6 @@ module.exports = function(canvas, state) {
 			container: state.lines,
 			argumentCount: 2,
 			update: function(obj, p1, p2) {
-				p1 = p1.valueOf();
-				p2 = p2.valueOf();
 				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
 				assert(Array.isArray(p2) && (p2.length === 3), "P2 has to be a 3-component vector");
 
@@ -132,13 +130,10 @@ module.exports = function(canvas, state) {
 			}
 		},
 		plane3Points: {
-			prefix: 'P',
+			prefix: 'E',
 			container: state.planes,
 			argumentCount: 3,
 			update: function(obj, p1, p2, p3) {
-				p1 = p1.valueOf();
-				p2 = p2.valueOf();
-				p3 = p3.valueOf();
 				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
 				assert(Array.isArray(p2) && (p2.length === 3), "P2 has to be a 3-component vector");
 				assert(Array.isArray(p3) && (p3.length === 3), "P3 has to be a 3-component vector");
@@ -156,11 +151,10 @@ module.exports = function(canvas, state) {
 			}
 		},
 		sphere: {
-			prefix: 'S',
+			prefix: 'K',
 			container: state.spheres,
 			argumentCount: 2,
 			update: function(obj, p, r) {
-				p = p.valueOf();
 				assert(Array.isArray(p) && (p.length === 3), "Center has to be a 3-component vector");
 				assert(r > 0, "Radius has to be greater than 0");
 
@@ -170,12 +164,75 @@ module.exports = function(canvas, state) {
 		}
 	};
 
+	const getters = {
+		points: obj => vec3(obj.pos).toArray(),
+		lines: obj => [vec3(obj.pos).toArray(), vec3(obj.dir).toArray()],
+		planes: obj => [vec3(obj.normal).toArray(), obj.distance],
+		spheres: obj => [vec3(obj.center).toArray(), obj.radius]
+	};
+
+	function addContainerScope(result, containerName, onDependency) {
+		let objects = state[containerName].objects;
+		Object.keys(objects).forEach(function(id) {
+			let obj = objects[id];
+			let value = getters[containerName](obj);
+			Object.defineProperty(result, id, {
+				enumerable: true,
+				get: function() {
+					if (onDependency) { onDependency(id, obj); }
+					return value;
+				}
+			});
+		});
+	}
+
+	function getScope(onDependency) {
+		let result = {};
+		addContainerScope(result, 'points', onDependency);
+		addContainerScope(result, 'lines', onDependency);
+		addContainerScope(result, 'planes', onDependency);
+		addContainerScope(result, 'spheres', onDependency);
+		return result;
+	}
+
+	function getObject(id) {
+		return state.points.objects[id] ||
+			state.lines.objects[id] ||
+			state.planes.objects[id] ||
+			state.spheres.objects[id];
+	}
+
+	function update(id, args) {
+		let obj = getObject(id);
+		assert(obj, `Unknown object "${id}"`);
+
+		let factory = factories[obj.instruction];
+		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);
+
+		obj.args = args.slice(0, factory.argumentCount);
+
+		obj.parents = {};
+		let scope = getScope(function(id, parent) {
+			obj.parents[id] = parent;
+		});
+		factory.update(obj, ...obj.args.map(arg => arg.eval(scope).valueOf()));
+
+		Object.keys(obj.children).forEach(function(childId) {
+			let child = obj.children[childId];
+			update(childId, child.args);
+		});
+	}
+
 	const instruction = function*() {
 		let event = yield Behavior.type('consoleInput');
 		let expression = event.value;
 
 		let node = mathjs.parse(expression);
 		if (node instanceof mathjs.expression.node.FunctionNode) {
+			if (node.fn instanceof mathjs.expression.node.AccessorNode) {
+				return update(node.fn.object.name, node.args);
+			}
+
 			let instructionName = node.name;
 			if (!(instructionName in factories)) {
 				throw new Error(`Unsupported instruction "${instructionName}"`);
@@ -186,15 +243,28 @@ module.exports = function(canvas, state) {
 			assert(node.args.length >= factory.argumentCount, `"${instructionName}" needs ${factory.argumentCount} parameters`);
 
 			let obj = {
-				args: node.args.slice(0, factory.argumentCount)
+				args: node.args.slice(0, factory.argumentCount),
+				instruction: instructionName,
+				children: {},
+				parents: {}
 			};
-			factory.update(obj, ...obj.args.map(arg => arg.eval()));
+
+			let scope = getScope(function(id, parent) {
+				obj.parents[id] = parent;
+			});
+
+			factory.update(obj, ...obj.args.map(arg => arg.eval(scope).valueOf()));
 
 			let color = node.args[factory.argumentCount];
 			let name = node.args[factory.argumentCount + 1];
-			let res = addObject(factory.prefix, factory.container, obj, color && color.eval(), name && name.eval());
+			let id = addObject(factory.prefix, factory.container, obj, color && color.eval(), name && name.eval());
+
+			Object.keys(obj.parents).forEach(function(parentId) {
+				obj.parents[parentId].children[id] = obj;
+			});
+
 			console.log(obj);
-			return res;
+			return id;
 		}
 
 		throw new Error('Only supporting function calls currently');
