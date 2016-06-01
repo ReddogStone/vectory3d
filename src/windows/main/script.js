@@ -30,8 +30,8 @@ context.fillRect(0, 0, emptyCanvas.width, emptyCanvas.height);
 
 const emptyTexture = engine3d.createTexture(emptyCanvas);
 
-const vertexShader = fs.readFileSync('jabaku/shaders/simple.vshader', 'utf8');
-const fragmentShader = fs.readFileSync('jabaku/shaders/simple.fshader', 'utf8');
+const vertexShader = fs.readFileSync(__dirname + '/../../../jabaku/shaders/simple.vshader', 'utf8');
+const fragmentShader = fs.readFileSync(__dirname + '/../../../jabaku/shaders/simple.fshader', 'utf8');
 const program = engine3d.createProgram(vertexShader, fragmentShader, 'simple');
 
 const sphereMesh = Mesh.make(Geometry.createSphereData(20));
