@@ -86,42 +86,87 @@ module.exports = function(state) {
 		[Type.SPHERE]: obj => [vec3(obj.center).toArray(), obj.radius]
 	};
 
-	function getScope(onDependency) {
-		let result = {};
-		let objects = state.objects;
-		Object.keys(objects).forEach(function(id) {
-			let obj = objects[id];
-			let value = getters[obj.type](obj);
-			Object.defineProperty(result, id, {
-				enumerable: true,
-				get: function() {
-					if (onDependency) { onDependency(id, obj); }
-					return value;
-				}
-			});
+	const DependencyType = {
+		CONST: 'const',
+		OBJECT: 'object'
+	};
+
+	const evaluators = {
+		[DependencyType.CONST]: dep => dep.value,
+		[DependencyType.OBJECT]: function(dep) {
+			let obj = state.objects[dep.id];
+			assert(obj, `Dependency does not exist "${dep.id}"`);
+			return getters[obj.type](obj);
+		}
+	};
+
+	function objectByName(name) {
+		return Object.keys(state.objects).map(id => state.objects[id]).find(obj => obj.name === name);
+	}
+
+	function getDependency(argNode) {
+		if (argNode instanceof mathjs.expression.node.SymbolNode) {
+			let dependency = objectByName(argNode.name);
+			assert(dependency, `No object with name "${argNode.name}"`);
+
+			return {
+				type: DependencyType.OBJECT,
+				id: dependency.id
+			};
+		}
+
+		return {
+			type: DependencyType.CONST,
+			expression: argNode.toString(),
+			value: argNode.eval().valueOf()
+		};
+	}
+
+	const getDependencies = (args, factory) => args.slice(0, factory.argumentCount).map(getDependency);
+
+	function forEachParent(obj, func) {
+		let parents = obj.dependencies.filter(dep => dep.type === DependencyType.OBJECT).map(dep => state.objects[dep.id]);
+		parents.forEach(func);
+	}
+
+	function removeChild(obj) {
+		forEachParent(obj, function(parent) {
+			delete parent.children[obj.id];
 		});
-		return result;
+	}
+
+	function addChild(obj) {
+		forEachParent(obj, function(parent) {
+			parent.children[obj.id] = true;
+		});
+	}
+
+	function updateObject(obj) {
+		let factory = factories[obj.instruction];
+		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);		
+
+		let params = obj.dependencies.map(dep => evaluators[dep.type](dep));
+		factory.update(obj, ...params);
+
+		Object.keys(obj.children).forEach(function(childId) {
+			let child = state.objects[childId];
+			assert(child, `Child object does not exist: "${childId}"`);
+			updateObject(child);
+		});
 	}
 
 	function update(id, args) {
 		let obj = state.objects[id];
-		assert(obj, `Unknown object "${id}"`);
+		assert(obj, `Object does not exist: "${id}"`);
 
 		let factory = factories[obj.instruction];
 		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);
 
-		obj.args = args.slice(0, factory.argumentCount);
+		removeChild(obj);
+		obj.dependencies = getDependencies(args, factory);
+		addChild(obj);
 
-		obj.parents = {};
-		let scope = getScope(function(id, parent) {
-			obj.parents[id] = parent;
-		});
-		factory.update(obj, ...obj.args.map(arg => arg.eval(scope).valueOf()));
-
-		Object.keys(obj.children).forEach(function(childId) {
-			let child = obj.children[childId];
-			update(childId, child.args);
-		});
+		updateObject(obj);
 	}
 
 	const instruction = function*() {
@@ -131,7 +176,11 @@ module.exports = function(state) {
 		let node = mathjs.parse(expression);
 		if (node instanceof mathjs.expression.node.FunctionNode) {
 			if (node.fn instanceof mathjs.expression.node.AccessorNode) {
-				return update(node.fn.object.name, node.args);
+				if (node.fn.name === 'update') {
+					return update(node.fn.object.name, node.args);
+				}
+
+				throw new Error(`Unknown object method "${node.fn.name}"`);
 			}
 
 			let instructionName = node.name;
@@ -144,25 +193,19 @@ module.exports = function(state) {
 			assert(node.args.length >= factory.argumentCount, `"${instructionName}" needs ${factory.argumentCount} parameters`);
 
 			let obj = {
-				args: node.args.slice(0, factory.argumentCount),
+				dependencies: getDependencies(node.args, factory),
 				instruction: instructionName,
-				children: {},
-				parents: {}
+				children: {}
 			};
 
-			let scope = getScope(function(id, parent) {
-				obj.parents[id] = parent;
-			});
-
-			factory.update(obj, ...obj.args.map(arg => arg.eval(scope).valueOf()));
+			let params = obj.dependencies.map(dep => evaluators[dep.type](dep));
+			factory.update(obj, ...params);
 
 			let color = node.args[factory.argumentCount];
 			let name = node.args[factory.argumentCount + 1];
 			let id = addObject(factory.type, obj, color && color.eval(), name && name.eval());
 
-			Object.keys(obj.parents).forEach(function(parentId) {
-				obj.parents[parentId].children[id] = obj;
-			});
+			addChild(obj);
 
 			console.log(obj);
 			return id;
