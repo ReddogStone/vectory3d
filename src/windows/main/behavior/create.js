@@ -7,31 +7,33 @@ const Behavior = require('../../../framework/behavior');
 const vec3 = require('../../../../jabaku/math/Vector3');
 const Color = require('../../../../jabaku/engine/color');
 
+const Type = require('../../../enums/geometry-type');
+const Prefix = require('../../../enums/prefix');
 
 module.exports = function(state) {
-	function addObject(prefix, container, obj, color, name) {
-		let index = container.nextIndex++;
+	function addObject(type, obj, color, name) {
+		let prefix = Prefix[type];
+		let index = state.indices[type]++;
 		
+		obj.type = type;
 		obj.id = `${prefix}${index}`;
 		obj.name = name || obj.id;
 		obj.color = color ? Color(color) : Color.random();
 
-		container.objects[obj.id] = obj;
+		state.objects[obj.id] = obj;
 		return obj.id;
 	}
 
 	const factories = {
 		point: {
-			prefix: 'P',
-			container: state.points,
+			type: Type.POINT,
 			argumentCount: 3,
 			update: function(obj, x, y, z) {
 				obj.pos = vec3(x, y, z);
 			}
 		},
 		line2Points: {
-			prefix: 'L',
-			container: state.lines,
+			type: Type.LINE,
 			argumentCount: 2,
 			update: function(obj, p1, p2) {
 				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
@@ -45,8 +47,7 @@ module.exports = function(state) {
 			}
 		},
 		plane3Points: {
-			prefix: 'E',
-			container: state.planes,
+			type: Type.PLANE,
 			argumentCount: 3,
 			update: function(obj, p1, p2, p3) {
 				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
@@ -66,8 +67,7 @@ module.exports = function(state) {
 			}
 		},
 		sphere: {
-			prefix: 'K',
-			container: state.spheres,
+			type: Type.SPHERE,
 			argumentCount: 2,
 			update: function(obj, p, r) {
 				assert(Array.isArray(p) && (p.length === 3), "Center has to be a 3-component vector");
@@ -80,17 +80,18 @@ module.exports = function(state) {
 	};
 
 	const getters = {
-		points: obj => vec3(obj.pos).toArray(),
-		lines: obj => [vec3(obj.pos).toArray(), vec3(obj.dir).toArray()],
-		planes: obj => [vec3(obj.normal).toArray(), obj.distance],
-		spheres: obj => [vec3(obj.center).toArray(), obj.radius]
+		[Type.POINT]: obj => vec3(obj.pos).toArray(),
+		[Type.LINE]: obj => [vec3(obj.pos).toArray(), vec3(obj.dir).toArray()],
+		[Type.PLANE]: obj => [vec3(obj.normal).toArray(), obj.distance],
+		[Type.SPHERE]: obj => [vec3(obj.center).toArray(), obj.radius]
 	};
 
-	function addContainerScope(result, containerName, onDependency) {
-		let objects = state[containerName].objects;
+	function getScope(onDependency) {
+		let result = {};
+		let objects = state.objects;
 		Object.keys(objects).forEach(function(id) {
 			let obj = objects[id];
-			let value = getters[containerName](obj);
+			let value = getters[obj.type](obj);
 			Object.defineProperty(result, id, {
 				enumerable: true,
 				get: function() {
@@ -99,26 +100,11 @@ module.exports = function(state) {
 				}
 			});
 		});
-	}
-
-	function getScope(onDependency) {
-		let result = {};
-		addContainerScope(result, 'points', onDependency);
-		addContainerScope(result, 'lines', onDependency);
-		addContainerScope(result, 'planes', onDependency);
-		addContainerScope(result, 'spheres', onDependency);
 		return result;
 	}
 
-	function getObject(id) {
-		return state.points.objects[id] ||
-			state.lines.objects[id] ||
-			state.planes.objects[id] ||
-			state.spheres.objects[id];
-	}
-
 	function update(id, args) {
-		let obj = getObject(id);
+		let obj = state.objects(id);
 		assert(obj, `Unknown object "${id}"`);
 
 		let factory = factories[obj.instruction];
@@ -172,7 +158,7 @@ module.exports = function(state) {
 
 			let color = node.args[factory.argumentCount];
 			let name = node.args[factory.argumentCount + 1];
-			let id = addObject(factory.prefix, factory.container, obj, color && color.eval(), name && name.eval());
+			let id = addObject(factory.type, obj, color && color.eval(), name && name.eval());
 
 			Object.keys(obj.parents).forEach(function(parentId) {
 				obj.parents[parentId].children[id] = obj;

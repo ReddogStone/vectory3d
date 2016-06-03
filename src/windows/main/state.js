@@ -4,6 +4,7 @@ const mat4 = require('../../../jabaku/math/Matrix4');
 const vec3 = require('../../../jabaku/math/Vector3');
 
 const Store = require('../../framework/store');
+const Type = require('../../enums/geometry-type');
 
 module.exports = function(canvas) {
 	const camera = {
@@ -41,21 +42,12 @@ module.exports = function(canvas) {
 			get view() { return view._value },
 			get projection() { return projection._value }
 		},
-		points: {
-			nextIndex: 1,
-			objects: {}
+		indices: {
+			[Type.POINT]: 1,
+			[Type.LINE]: 1,
+			[Type.PLANE]: 1,
+			[Type.SPHERE]: 1
 		},
-		lines: {
-			nextIndex: 1,
-			objects: {}
-		},
-		planes: {
-			nextIndex: 1,
-			objects: {}
-		},
-		spheres: {
-			nextIndex: 1,
-			objects: {}
-		}
+		objects: {}
 	};
 };

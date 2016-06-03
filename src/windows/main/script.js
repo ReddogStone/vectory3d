@@ -19,6 +19,8 @@ const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
 const state = require('./state')(canvas);
 const behavior = require('./behavior')(canvas, state);
 
+const Type = require('../../enums/geometry-type');
+
 const texture = engine3d.createTextureFromFile('../../../data/textures/test.png');
 
 let emptyCanvas = document.createElement('canvas');
@@ -37,6 +39,8 @@ const program = engine3d.createProgram(vertexShader, fragmentShader, 'simple');
 const sphereMesh = Mesh.make(Geometry.createSphereData(20));
 const cylinderMesh = Mesh.make(Geometry.createCylinderData());
 const quadMesh = Mesh.make(Geometry.createQuadData());
+
+const geometries = type => Object.keys(state.objects).map(id => state.objects[id]).filter(obj => obj.type === type);
 
 engine3d.setClearColor(0.2, 0.2, 0.2, 1);
 
@@ -60,9 +64,7 @@ requestAnimationFrame(function render() {
 		uAmbient: [0, 0, 0]
 	});
 
-	Object.keys(state.points.objects).forEach(function(id) {
-		let point = state.points.objects[id];
-
+	geometries(Type.POINT).forEach(function(point) {
 		let world = mat4().translate(point.pos).scale(vec3(1, 1, 1).scale(0.08));
 		let worldIT = world.clone().invert().transpose();
 
@@ -75,9 +77,7 @@ requestAnimationFrame(function render() {
 		Mesh.render(program, sphereMesh);
 	});
 
-	Object.keys(state.lines.objects).forEach(function(id) {
-		let line = state.lines.objects[id];
-
+	geometries(Type.LINE).forEach(function(line) {
 		let rotation = quat.rotationTo(vec3(0, 0, 1), line.dir);
 		let world = mat4.fromRotationTranslation(rotation, line.pos).scale(vec3(0.05, 0.05, 10.0));
 		let worldIT = world.clone().invert().transpose();
@@ -91,9 +91,7 @@ requestAnimationFrame(function render() {
 		Mesh.render(program, cylinderMesh);
 	});
 
-	Object.keys(state.planes.objects).forEach(function(id) {
-		let plane = state.planes.objects[id];
-
+	geometries(Type.PLANE).forEach(function(plane) {
 		let rotation = quat.rotationTo(vec3(0, 0, 1), plane.normal);
 		let pos = plane.normal.clone().scale(plane.distance);
 		let world = mat4.fromRotationTranslation(rotation, pos).scale(vec3(10.0, 10.0, 1));
@@ -108,9 +106,7 @@ requestAnimationFrame(function render() {
 		Mesh.render(program, quadMesh);
 	});
 
-	Object.keys(state.spheres.objects).forEach(function(id) {
-		let sphere = state.spheres.objects[id];
-
+	geometries(Type.SPHERE).forEach(function(sphere) {
 		let world = mat4().translate(sphere.center).scale(vec3(1, 1, 1).scale(sphere.radius));
 		let worldIT = world.clone().invert().transpose();
 
