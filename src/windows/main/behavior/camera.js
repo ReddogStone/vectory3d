@@ -26,11 +26,13 @@ module.exports = function(canvas, state) {
 	const mouseButtonUp = (type, buttons) => 
 		event => (event.type === 'mouseup') && ((event.buttons & buttons) === 0);
 
+	const ZOOM_STRENGTH = 0.001;
 	const zoom = function*() {
 		let event = yield Behavior.type('mousewheel');
-		state.camera.pos = Transform.moveToTarget(state.camera.pos, state.camera.target, 1 - event.delta * 0.001);
+		state.camera.pos = Transform.moveToTarget(state.camera.pos, state.camera.target, 1 - event.delta * ZOOM_STRENGTH);
 	};
 
+	const ROTATION_STRENGTH = 0.006;
 	const rotate = function*() {
 		let event = yield Behavior.filter(mouseButtonDown(Buttons.LEFT));
 		let last = event.pos;
@@ -43,8 +45,8 @@ module.exports = function(canvas, state) {
 				let dy = last.y - pos.y;
 
 				let cam = state.camera;
-				let newPos = Transform.rotateAroundTargetVert(cam.pos, cam.target, cam.up, dy * 0.006);
-				newPos = Transform.rotateAroundTargetHoriz(newPos, cam.target, cam.up, dx * 0.006);
+				let newPos = Transform.rotateAroundTargetVert(cam.pos, cam.target, cam.up, dy * ROTATION_STRENGTH);
+				newPos = Transform.rotateAroundTargetHoriz(newPos, cam.target, cam.up, dx * ROTATION_STRENGTH);
 				cam.pos = newPos;
 
 				last = pos;
@@ -53,6 +55,7 @@ module.exports = function(canvas, state) {
 		);
 	};
 
+	const PAN_STRENGTH = 0.01;
 	const pan = function*() {
 		let event = yield Behavior.filter(mouseButtonDown(Buttons.MIDDLE));
 		let last = event.pos;
@@ -65,12 +68,14 @@ module.exports = function(canvas, state) {
 				let dy = last.y - pos.y;
 
 				let cam = state.camera;
-				let dir = cam.target.clone().sub(cam.pos).normalize();
+				let camToTarget = cam.target.clone().sub(cam.pos);
+				let dir = camToTarget.normalize();
 				let right = dir.clone().cross(cam.up);
 				let up = dir.clone().cross(right);
 
-				let deltaRight = right.scale(dx * 0.01);
-				let deltaUp = up.scale(dy * 0.01);
+				let scale = PAN_STRENGTH / camToTarget.length();
+				let deltaRight = right.scale(dx * scale);
+				let deltaUp = up.scale(dy * scale);
 				let delta = deltaRight.add(deltaUp);
 
 				let newTarget = cam.target.clone().add(delta);
