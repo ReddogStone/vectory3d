@@ -44,6 +44,11 @@ const geometries = type => Object.keys(state.objects).map(id => state.objects[id
 
 engine3d.setClearColor(0.2, 0.2, 0.2, 1);
 
+// TODO: remove, this is to put less strain on the hardware during development
+requestAnimationFrame = function(callback) {
+	return setTimeout(callback, 100);
+};
+
 requestAnimationFrame(function render() {
 	engine3d.clear();
 
