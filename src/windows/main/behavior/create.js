@@ -104,7 +104,7 @@ module.exports = function(state) {
 	}
 
 	function update(id, args) {
-		let obj = state.objects(id);
+		let obj = state.objects[id];
 		assert(obj, `Unknown object "${id}"`);
 
 		let factory = factories[obj.instruction];
