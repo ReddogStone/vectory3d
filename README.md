@@ -30,5 +30,6 @@ You can use variables in expressions, e.g. `point(x, 0, 0)`. In this example a v
 Vectory uses math.js to parse and evaluate expressions. Thus, you can use elaborate mathematical expressions in any place where a simple value could go. E.g. you can type `point(sqrt(3), x + 2, x^2 + 2 * x - 1)`
 
 ## History
-This is actually an attempt to redesign Vectory from scratch. The first time, I have written it in 2004 using Delphi and GLScene (a 3D graphics library). It turned out not to be very maintainable, but it is still available for free (in German): http://matheplanet.com/matheplanet/nuke/html/dl.php?id=963
-The old version has a lot of features but lacks the potential of further development, due to spaghetti code and overall lack of architecture.
+This is actually an attempt to redesign Vectory from scratch. The first time, I have written it in 2004 using Delphi and GLScene (a 3D graphics library). It turned out not to be very maintainable, but it is still available for free (in German): http://matheplanet.com/matheplanet/nuke/html/dl.php?id=963.
+
+The old version has a lot of features but offers no potential for further development, due to spaghetti code and overall lack of architecture.
