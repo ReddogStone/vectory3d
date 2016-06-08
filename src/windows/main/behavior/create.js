@@ -262,6 +262,13 @@ module.exports = function(state) {
 			};
 
 			let variableDependencies = obj.dependencies.filter(dep => dep.type === DependencyType.VARIABLE);
+			variableDependencies.forEach(function(dependency) {
+				dependency.variables.forEach(function(variable) {
+					if (state.variables[variable] === undefined) {
+						state.variables[variable] = 0;
+					}
+				});
+			});
 
 			factory.update(obj, ...evaluateDependencies(obj.dependencies));
 
@@ -273,9 +280,24 @@ module.exports = function(state) {
 
 			console.log(obj);
 			return id;
+		} else if (node.isAssignmentNode) {
+			if (node.object.isSymbolNode) {
+				let variableName = node.object.name;
+				let value = node.value.eval().valueOf();
+				state.variables[variableName] = value;
+
+				Object.keys(state.objects).forEach(function(id) {
+					let obj = state.objects[id];
+					let dependsOnVariable = obj.dependencies.some(d => d.type === DependencyType.VARIABLE && d.variables.indexOf(variableName) >= 0);
+					if (dependsOnVariable) {
+						updateObject(obj);
+					}
+				});
+			}
+			return;
 		}
 
-		throw new Error('Only supporting function calls currently');
+		throw new Error(`Unsupported instruction ${expression}`);
 	};
 
 	return Behavior.repeat(instruction);
