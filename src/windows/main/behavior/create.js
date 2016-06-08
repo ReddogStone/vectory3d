@@ -24,17 +24,101 @@ module.exports = function(state) {
 		return obj.id;
 	}
 
+	function objectByName(name) {
+		return Object.keys(state.objects).map(id => state.objects[id]).find(obj => obj.name === name);
+	}
+
+	function getConstDependency(argNode) {
+		return {
+			type: DependencyType.CONST,
+			expression: argNode.toString(),
+			value: argNode.eval().valueOf()
+		};
+	}
+
+	function getVariableDependency(argNode) {
+		let variableNodes = argNode.filter(node => node.isSymbolNode);
+		if (variableNodes.length > 0) {
+			let code = argNode.compile();
+			return {
+				type: DependencyType.VARIABLE,
+				variables: variableNodes.map(varNode => varNode.name),
+				expression: argNode.toString(),
+				eval: code.eval.bind(code)
+			};
+		}
+	}
+
+	function getObjectDependency(argNode) {
+		if (argNode.isSymbolNode) {
+			let dependency = objectByName(argNode.name);
+
+			if (dependency) {
+				return {
+					type: DependencyType.OBJECT,
+					id: dependency.id
+				};
+			}
+		}
+	}
+
+	function getDependency(argNode) {
+		return getObjectDependency(argNode) || getVariableDependency(argNode) || getConstDependency(argNode);
+	}
+
+	function checkGeometryType(dependency, geometryType) {
+		return (dependency.type === DependencyType.OBJECT) &&
+			state.objects[dependency.id] && state.objects[dependency.id].type === geometryType;
+	}
+
+	function checkType(dependency, type) {
+		switch (type) {
+			case 'number':
+				return (dependency.type === DependencyType.CONST) || (dependency.type === DependencyType.VARIABLE);
+			case 'vector':
+				return ((dependency.type === DependencyType.CONST) || (dependency.type === DependencyType.VARIABLE)); // TODO check for vector3
+			case 'point':
+				return checkGeometryType(dependency, Type.POINT);
+			case 'line':
+				return checkGeometryType(dependency, Type.LINE);
+			case 'plane':
+				return checkGeometryType(dependency, Type.PLANE);
+			case 'sphere':
+				return checkGeometryType(dependency, Type.SPHERE);
+		}
+	}
+
+	function expectType(args, type) {
+		let types = type.split('|');
+		let arg = args.shift();
+		let dependency = getDependency(arg);
+
+		assert(types.some(t => checkType(dependency, t)), `Expected argument ${arg} to be of type "${type}"`);
+
+		return dependency;
+	}
+
+	function getDependencies(args, pattern) {
+		let rest = args.slice();
+		let dependencies = pattern.map(element => expectType(rest, element));
+
+		return {
+			dependencies: dependencies,
+			rest: rest
+		};
+	}
+
 	const factories = {
 		point: {
 			type: Type.POINT,
-			argumentCount: 3,
+			args: ['number', 'number', 'number'],
 			update: function(obj, x, y, z) {
 				obj.pos = vec3(x, y, z);
 			}
 		},
 		line2Points: {
 			type: Type.LINE,
-			argumentCount: 2,
+			args: ['vector|point', 'vector|point'],
 			update: function(obj, p1, p2) {
 				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
 				assert(Array.isArray(p2) && (p2.length === 3), "P2 has to be a 3-component vector");
@@ -48,7 +132,7 @@ module.exports = function(state) {
 		},
 		plane3Points: {
 			type: Type.PLANE,
-			argumentCount: 3,
+			args: ['vector|point', 'vector|point', 'vector|point'],
 			update: function(obj, p1, p2, p3) {
 				assert(Array.isArray(p1) && (p1.length === 3), "P1 has to be a 3-component vector");
 				assert(Array.isArray(p2) && (p2.length === 3), "P2 has to be a 3-component vector");
@@ -68,7 +152,7 @@ module.exports = function(state) {
 		},
 		sphere: {
 			type: Type.SPHERE,
-			argumentCount: 2,
+			args: ['vector|point', 'number'],
 			update: function(obj, p, r) {
 				assert(Array.isArray(p) && (p.length === 3), "Center has to be a 3-component vector");
 				assert(r > 0, "Radius has to be greater than 0");
@@ -80,7 +164,7 @@ module.exports = function(state) {
 	};
 
 	const getters = {
-		[Type.POINT]: obj => vec3(obj.pos).toArray(),
+		[Type.POINT]: obj => [vec3(obj.pos).toArray()],
 		[Type.LINE]: obj => [vec3(obj.pos).toArray(), vec3(obj.dir).toArray()],
 		[Type.PLANE]: obj => [vec3(obj.normal).toArray(), obj.distance],
 		[Type.SPHERE]: obj => [vec3(obj.center).toArray(), obj.radius]
@@ -88,11 +172,13 @@ module.exports = function(state) {
 
 	const DependencyType = {
 		CONST: 'const',
+		VARIABLE: 'variable',
 		OBJECT: 'object'
 	};
 
 	const evaluators = {
-		[DependencyType.CONST]: dep => dep.value,
+		[DependencyType.CONST]: dep => [dep.value],
+		[DependencyType.VARIABLE]: dep => [dep.eval(state.variables)],
 		[DependencyType.OBJECT]: function(dep) {
 			let obj = state.objects[dep.id];
 			assert(obj, `Dependency does not exist "${dep.id}"`);
@@ -100,29 +186,7 @@ module.exports = function(state) {
 		}
 	};
 
-	function objectByName(name) {
-		return Object.keys(state.objects).map(id => state.objects[id]).find(obj => obj.name === name);
-	}
-
-	function getDependency(argNode) {
-		if (argNode instanceof mathjs.expression.node.SymbolNode) {
-			let dependency = objectByName(argNode.name);
-			assert(dependency, `No object with name "${argNode.name}"`);
-
-			return {
-				type: DependencyType.OBJECT,
-				id: dependency.id
-			};
-		}
-
-		return {
-			type: DependencyType.CONST,
-			expression: argNode.toString(),
-			value: argNode.eval().valueOf()
-		};
-	}
-
-	const getDependencies = (args, factory) => args.slice(0, factory.argumentCount).map(getDependency);
+	const evaluateDependencies = dependencies => [].concat(...dependencies.map(dep => evaluators[dep.type](dep)));
 
 	function forEachParent(obj, func) {
 		let parents = obj.dependencies.filter(dep => dep.type === DependencyType.OBJECT).map(dep => state.objects[dep.id]);
@@ -145,8 +209,7 @@ module.exports = function(state) {
 		let factory = factories[obj.instruction];
 		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);		
 
-		let params = obj.dependencies.map(dep => evaluators[dep.type](dep));
-		factory.update(obj, ...params);
+		factory.update(obj, ...evaluateDependencies(obj.dependencies));
 
 		Object.keys(obj.children).forEach(function(childId) {
 			let child = state.objects[childId];
@@ -163,7 +226,7 @@ module.exports = function(state) {
 		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);
 
 		removeChild(obj);
-		obj.dependencies = getDependencies(args, factory);
+		obj.dependencies = getDependencies(args, factory.args).dependencies;
 		addChild(obj);
 
 		updateObject(obj);
@@ -174,8 +237,8 @@ module.exports = function(state) {
 		let expression = event.value;
 
 		let node = mathjs.parse(expression);
-		if (node instanceof mathjs.expression.node.FunctionNode) {
-			if (node.fn instanceof mathjs.expression.node.AccessorNode) {
+		if (node.isFunctionNode) {
+			if (node.fn.isAccessorNode) {
 				if (node.fn.name === 'update') {
 					return update(node.fn.object.name, node.args);
 				}
@@ -190,19 +253,20 @@ module.exports = function(state) {
 
 			let factory = factories[instructionName];
 
-			assert(node.args.length >= factory.argumentCount, `"${instructionName}" needs ${factory.argumentCount} parameters`);
+			let { dependencies, rest } = getDependencies(node.args, factory.args);
 
 			let obj = {
-				dependencies: getDependencies(node.args, factory),
+				dependencies: dependencies,
 				instruction: instructionName,
 				children: {}
 			};
 
-			let params = obj.dependencies.map(dep => evaluators[dep.type](dep));
-			factory.update(obj, ...params);
+			let variableDependencies = obj.dependencies.filter(dep => dep.type === DependencyType.VARIABLE);
 
-			let color = node.args[factory.argumentCount];
-			let name = node.args[factory.argumentCount + 1];
+			factory.update(obj, ...evaluateDependencies(obj.dependencies));
+
+			let color = rest[0];
+			let name = rest[1];
 			let id = addObject(factory.type, obj, color && color.eval(), name && name.eval());
 
 			addChild(obj);

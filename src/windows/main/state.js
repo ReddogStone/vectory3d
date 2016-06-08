@@ -48,6 +48,7 @@ module.exports = function(canvas) {
 			[Type.PLANE]: 1,
 			[Type.SPHERE]: 1
 		},
-		objects: {}
+		objects: {},
+		variables: {}
 	};
 };
