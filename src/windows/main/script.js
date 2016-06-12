@@ -16,8 +16,10 @@ const quat = require('../../../jabaku/math/Quaternion');
 const engine3d = require('../../../jabaku/engine/engine3d')(canvas, true);
 const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
 
+const HitTestView = require('./views/hit-test')(engine3d);
+
 const state = require('./state')(canvas);
-const behavior = require('./behavior')(canvas, state);
+const behavior = require('./behavior')(canvas, state, HitTestView);
 
 const Type = require('../../enums/geometry-type');
 
@@ -42,14 +44,14 @@ const quadMesh = Mesh.make(Geometry.createQuadData());
 
 const geometries = type => Object.keys(state.objects).map(id => state.objects[id]).filter(obj => obj.type === type);
 
-engine3d.setClearColor(0.2, 0.2, 0.2, 1);
-
 // TODO: remove, this is to put less strain on the hardware during development
 requestAnimationFrame = function(callback) {
 	return setTimeout(callback, 100);
 };
 
 requestAnimationFrame(function render() {
+	engine3d.setClearColor(0.2, 0.2, 0.2, 1);
+	engine3d.setDefaultFrameBuffer();
 	engine3d.clear();
 
 	engine3d.setViewport(0, 0, canvas.width, canvas.height);
@@ -69,6 +71,8 @@ requestAnimationFrame(function render() {
 		uAmbient: [0, 0, 0]
 	});
 
+	let hitObjects = [];
+
 	geometries(Type.POINT).forEach(function(point) {
 		let world = mat4().translate(point.pos).scale(vec3(1, 1, 1).scale(0.08));
 		let worldIT = world.clone().invert().transpose();
@@ -76,10 +80,17 @@ requestAnimationFrame(function render() {
 		engine3d.setProgramParameters(program.activeUniforms, {
 			uColor: Color.toArray4(point.color),
 			uWorld: world.toArray(),
-			uWorldIT: worldIT.toArray()
+			uWorldIT: worldIT.toArray(),
+			uLuminosity: point.luminosity || 0
 		});
 
 		Mesh.render(program, sphereMesh);
+
+		hitObjects.push({
+			mesh: sphereMesh,
+			world: world.scale(vec3(1, 1, 1)),
+			id: point.id
+		});
 	});
 
 	geometries(Type.LINE).forEach(function(line) {
@@ -90,10 +101,17 @@ requestAnimationFrame(function render() {
 		engine3d.setProgramParameters(program.activeUniforms, {
 			uColor: Color.toArray4(line.color),
 			uWorld: world.toArray(),
-			uWorldIT: worldIT.toArray()
+			uWorldIT: worldIT.toArray(),
+			uLuminosity: line.luminosity || 0
 		});
 
 		Mesh.render(program, cylinderMesh);
+
+		hitObjects.push({
+			mesh: cylinderMesh,
+			world: world.scale(vec3(1, 1, 1)),
+			id: line.id
+		});
 	});
 
 	geometries(Type.PLANE).forEach(function(plane) {
@@ -105,10 +123,17 @@ requestAnimationFrame(function render() {
 		engine3d.setProgramParameters(program.activeUniforms, {
 			uColor: Color.toArray4(plane.color),
 			uWorld: world.toArray(),
-			uWorldIT: worldIT.toArray()
+			uWorldIT: worldIT.toArray(),
+			uLuminosity: plane.luminosity || 0
 		});
 
 		Mesh.render(program, quadMesh);
+
+		hitObjects.push({
+			mesh: quadMesh,
+			world: world,
+			id: plane.id
+		});
 	});
 
 	geometries(Type.SPHERE).forEach(function(sphere) {
@@ -118,11 +143,20 @@ requestAnimationFrame(function render() {
 		engine3d.setProgramParameters(program.activeUniforms, {
 			uColor: Color.toArray4(sphere.color),
 			uWorld: world.toArray(),
-			uWorldIT: worldIT.toArray()
+			uWorldIT: worldIT.toArray(),
+			uLuminosity: sphere.luminosity || 0
 		});
 
 		Mesh.render(program, sphereMesh);
+
+		hitObjects.push({
+			mesh: sphereMesh,
+			world: world,
+			id: sphere.id
+		});
 	});
+
+	HitTestView.render(state.camera, hitObjects);
 
 	engine3d.renderDebugQuad(texture, 0, 0, 100, 100);
 	requestAnimationFrame(render);
@@ -153,8 +187,8 @@ input.addEventListener('keypress', function(event) {
 behavior({ type: 'consoleInput', value: 'point(0, 0, 0)' });
 behavior({ type: 'consoleInput', value: 'point(1, 0, 0)' });
 behavior({ type: 'consoleInput', value: 'line2Points(P1, P2)' });
-// behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 1, 0])' });
-// behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 0, 1])' });
+behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 1, 0])' });
+behavior({ type: 'consoleInput', value: 'line2Points([0, 0, 0], [0, 0, 1])' });
 // behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 0], [1, 0, 0], [0, 1, 0])' });
 // behavior({ type: 'consoleInput', value: 'plane3Points([0, 0, 1], [-1, 0, 0], [0, 1, 0])' });
-// behavior({ type: 'consoleInput', value: 'sphere([0, 0, 3], 2)' });
+behavior({ type: 'consoleInput', value: 'sphere([0, 0, 3], 2)' });

@@ -22,15 +22,34 @@ module.exports = function(canvas, state) {
 		MIDDLE: 4
 	};
 	const mouseButtonDown = (buttons) => 
-		event => (event.type === 'mousedown') && ((event.buttons & buttons) === buttons);
+		event => (event.type === 'mousedown') && ((event.buttons ^ buttons) === 0);
 	const mouseButtonUp = (type, buttons) => 
 		event => (event.type === 'mouseup') && ((event.buttons & buttons) === 0);
 
-	const ZOOM_STRENGTH = 0.001;
+	// const ZOOM_STRENGTH = 0.001;
+	// const zoom = function*() {
+	// 	let event = yield Behavior.type('mousewheel');
+	// 	state.camera.pos = Transform.moveToTarget(state.camera.pos, state.camera.target, 1 - event.delta * ZOOM_STRENGTH);
+	// };
+
+	const ZOOM_STRENGTH = 0.006;
 	const zoom = function*() {
-		let event = yield Behavior.type('mousewheel');
-		state.camera.pos = Transform.moveToTarget(state.camera.pos, state.camera.target, 1 - event.delta * ZOOM_STRENGTH);
-	};
+		let event = yield Behavior.filter(mouseButtonDown(Buttons.LEFT | Buttons.RIGHT));
+		let last = event.pos;
+
+		yield Behavior.first(
+			Behavior.repeat(function*() {
+				let event = yield Behavior.type('mousemove');
+				let pos = event.pos;
+				let dy = last.y - pos.y;
+
+			 	state.camera.pos = Transform.moveToTarget(state.camera.pos, state.camera.target, 1 - dy * ZOOM_STRENGTH);
+
+				last = pos;
+			}),
+			Behavior.filter(mouseButtonUp(Buttons.LEFT | Buttons.RIGHT))
+		);
+	};	
 
 	const ROTATION_STRENGTH = 0.006;
 	const rotate = function*() {
