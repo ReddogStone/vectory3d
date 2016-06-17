@@ -7,11 +7,13 @@ const State = {
 };
 
 function makeNode(initial, sources, name) {
-	let node = {
-		_dependents: [],
-		_name: name,
-		_value: initial
+	let node = function() {
+		return node._value;
 	};
+
+	node._dependents = [];
+	node._name = name;
+	node._value = initial;
 
 	sources.forEach(function(source) {
 		source._dependents.push(node);

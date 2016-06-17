@@ -23,24 +23,24 @@ module.exports = function(canvas) {
 
 	return {
 		camera: {
-			get pos() { return camera.pos._value },
+			get pos() { return camera.pos() },
 			set pos(value) { Store.transaction(set => set(camera.pos, value)); },
-			get target() { return camera.target._value },
+			get target() { return camera.target() },
 			set target(value) { Store.transaction(set => set(camera.target, value)); },
-			get up() { return camera.up._value },
+			get up() { return camera.up() },
 			set up(value) { Store.transaction(set => set(camera.up, value)); },
 
-			get fov() { return camera.fov._value },
+			get fov() { return camera.fov() },
 			set fov(value) { Store.transaction(set => set(camera.fov, value)); },
-			get aspect() { return camera.aspect._value },
+			get aspect() { return camera.aspect() },
 			set aspect(value) { Store.transaction(set => set(camera.aspect, value)); },
-			get near() { return camera.near._value },
+			get near() { return camera.near() },
 			set near(value) { Store.transaction(set => set(camera.near, value)); },
-			get far() { return camera.far._value },
+			get far() { return camera.far() },
 			set far(value) { Store.transaction(set => set(camera.far, value)); },
 
-			get view() { return view._value },
-			get projection() { return projection._value }
+			get view() { return view() },
+			get projection() { return projection() }
 		},
 		indices: {
 			[Type.POINT]: 1,
