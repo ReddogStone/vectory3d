@@ -16,7 +16,7 @@ const quat = require('../../../jabaku/math/Quaternion');
 const engine3d = require('../../../jabaku/engine/engine3d')(canvas, true);
 const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
 
-const HitTestView = require('./views/hit-test')(engine3d);
+const HitTestView = require('./view/hit-test')(engine3d);
 
 const state = require('./state')(canvas);
 const behavior = require('./behavior')(canvas, state, HitTestView);
