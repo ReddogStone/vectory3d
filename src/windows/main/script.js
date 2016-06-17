@@ -19,7 +19,9 @@ const Mesh = require('../../../jabaku/engine/mesh')(engine3d);
 const HitTestView = require('./view/hit-test')(engine3d);
 
 const state = require('./state')(canvas);
-const behavior = require('./behavior')(canvas, state, HitTestView);
+const actionHandlers = require('./action')(state);
+const actions = require('../../framework/dispatcher')(actionHandlers);
+const behavior = require('./behavior')(canvas, state, HitTestView, actions);
 
 const Type = require('../../enums/geometry-type');
 

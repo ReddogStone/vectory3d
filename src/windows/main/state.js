@@ -8,20 +8,23 @@ const Type = require('../../enums/geometry-type');
 
 module.exports = function(canvas) {
 	const camera = {
-		pos: Store.source(vec3(4, 8, 8)),
-		target: Store.source(vec3(0, 0, 0)),
-		up: Store.source(vec3(0, 1, 0)),
+		pos: Store.source(vec3(4, 8, 8), 'camera.pos'),
+		target: Store.source(vec3(0, 0, 0), 'camera.target'),
+		up: Store.source(vec3(0, 1, 0), 'camera.up'),
 
-		fov: Store.source(Math.PI / 4),
-		aspect: Store.source(canvas.width / canvas.height),
-		near: Store.source(0.1),
-		far: Store.source(1000.0)
+		fov: Store.source(Math.PI / 4, 'camera.fov'),
+		aspect: Store.source(canvas.width / canvas.height, 'camera.aspect'),
+		near: Store.source(0.1, 'camera.near'),
+		far: Store.source(1000.0, 'camera.far')
 	};
 
-	const view = Store.dependent([camera.pos, camera.target, camera.up], mat4.lookAt);
-	const projection = Store.dependent([camera.fov, camera.aspect, camera.near, camera.far], mat4.perspective)
+	const view = Store.dependent([camera.pos, camera.target, camera.up], mat4.lookAt, 'camera.view');
+	const projection = Store.dependent([camera.fov, camera.aspect, camera.near, camera.far], mat4.perspective, 'camera.perspective')
 
 	return {
+		base: {
+			camera: camera
+		},
 		camera: {
 			get pos() { return camera.pos() },
 			set pos(value) { Store.transaction(set => set(camera.pos, value)); },

@@ -2,7 +2,7 @@ const Behavior = require('../../../framework/behavior');
 
 const Transform = require('../../../../jabaku/math/transform');
 
-module.exports = function(canvas, state) {
+module.exports = function(canvas, state, actions) {
 	function resizeCanvas() {
 		canvas.width = canvas.clientWidth;
 		canvas.height = canvas.clientHeight;
@@ -29,7 +29,7 @@ module.exports = function(canvas, state) {
 	const ZOOM_STRENGTH = 0.001;
 	const zoom = function*() {
 		let event = yield Behavior.type('mousewheel');
-		state.camera.pos = Transform.moveToTarget(state.camera.pos, state.camera.target, 1 - event.delta * ZOOM_STRENGTH);
+		actions.camera.zoom(1 - event.delta * ZOOM_STRENGTH);
 	};
 
 	// const ZOOM_STRENGTH = 0.006;
@@ -63,10 +63,7 @@ module.exports = function(canvas, state) {
 				let dx = last.x - pos.x;
 				let dy = last.y - pos.y;
 
-				let cam = state.camera;
-				let newPos = Transform.rotateAroundTargetVert(cam.pos, cam.target, cam.up, dy * ROTATION_STRENGTH);
-				newPos = Transform.rotateAroundTargetHoriz(newPos, cam.target, cam.up, dx * ROTATION_STRENGTH);
-				cam.pos = newPos;
+				actions.camera.rotate(dx * ROTATION_STRENGTH, dy * ROTATION_STRENGTH);
 
 				last = pos;
 			}),
@@ -74,7 +71,7 @@ module.exports = function(canvas, state) {
 		);
 	};
 
-	const PAN_STRENGTH = 0.01;
+	const PAN_STRENGTH = 0.0012;
 	const pan = function*() {
 		let event = yield Behavior.filter(mouseButtonDown(Buttons.MIDDLE));
 		let last = event.pos;
@@ -86,22 +83,7 @@ module.exports = function(canvas, state) {
 				let dx = last.x - pos.x;
 				let dy = last.y - pos.y;
 
-				let cam = state.camera;
-				let camToTarget = cam.target.clone().sub(cam.pos);
-				let dir = camToTarget.normalize();
-				let right = dir.clone().cross(cam.up);
-				let up = dir.clone().cross(right);
-
-				let scale = PAN_STRENGTH / camToTarget.length();
-				let deltaRight = right.scale(dx * scale);
-				let deltaUp = up.scale(dy * scale);
-				let delta = deltaRight.add(deltaUp);
-
-				let newTarget = cam.target.clone().add(delta);
-				let newPos = cam.pos.clone().add(delta);
-
-				cam.target = newTarget;
-				cam.pos = newPos;
+				actions.camera.pan(dx * PAN_STRENGTH, dy * PAN_STRENGTH);
 
 				last = pos;
 			}),
