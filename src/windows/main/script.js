@@ -79,11 +79,13 @@ requestAnimationFrame(function render() {
 		let world = mat4().translate(point.pos).scale(vec3(1, 1, 1).scale(0.08));
 		let worldIT = world.clone().invert().transpose();
 
+		let luminosity = (state.base.highlighted() === point.id) ? 1.0 : 0;
+
 		engine3d.setProgramParameters(program.activeUniforms, {
 			uColor: Color.toArray4(point.color),
 			uWorld: world.toArray(),
 			uWorldIT: worldIT.toArray(),
-			uLuminosity: point.luminosity || 0
+			uLuminosity: luminosity
 		});
 
 		Mesh.render(program, sphereMesh);
@@ -100,11 +102,13 @@ requestAnimationFrame(function render() {
 		let world = mat4.fromRotationTranslation(rotation, line.pos).scale(vec3(0.05, 0.05, 10.0));
 		let worldIT = world.clone().invert().transpose();
 
+		let luminosity = (state.base.highlighted() === line.id) ? 1.0 : 0;
+
 		engine3d.setProgramParameters(program.activeUniforms, {
 			uColor: Color.toArray4(line.color),
 			uWorld: world.toArray(),
 			uWorldIT: worldIT.toArray(),
-			uLuminosity: line.luminosity || 0
+			uLuminosity: luminosity
 		});
 
 		Mesh.render(program, cylinderMesh);
@@ -122,11 +126,13 @@ requestAnimationFrame(function render() {
 		let world = mat4.fromRotationTranslation(rotation, pos).scale(vec3(10.0, 10.0, 1));
 		let worldIT = world.clone().invert().transpose();
 
+		let luminosity = (state.base.highlighted() === plane.id) ? 1.0 : 0;
+
 		engine3d.setProgramParameters(program.activeUniforms, {
 			uColor: Color.toArray4(plane.color),
 			uWorld: world.toArray(),
 			uWorldIT: worldIT.toArray(),
-			uLuminosity: plane.luminosity || 0
+			uLuminosity: luminosity
 		});
 
 		Mesh.render(program, quadMesh);
@@ -142,11 +148,13 @@ requestAnimationFrame(function render() {
 		let world = mat4().translate(sphere.center).scale(vec3(1, 1, 1).scale(sphere.radius));
 		let worldIT = world.clone().invert().transpose();
 
+		let luminosity = (state.base.highlighted() === sphere.id) ? 1.0 : 0;
+
 		engine3d.setProgramParameters(program.activeUniforms, {
 			uColor: Color.toArray4(sphere.color),
 			uWorld: world.toArray(),
 			uWorldIT: worldIT.toArray(),
-			uLuminosity: sphere.luminosity || 0
+			uLuminosity: luminosity
 		});
 
 		Mesh.render(program, sphereMesh);

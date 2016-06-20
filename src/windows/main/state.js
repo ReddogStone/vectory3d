@@ -23,7 +23,8 @@ module.exports = function(canvas) {
 
 	return {
 		base: {
-			camera: camera
+			camera: camera,
+			highlighted: Store.source(null, 'highlighted')
 		},
 		camera: {
 			get pos() { return camera.pos() },

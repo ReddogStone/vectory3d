@@ -1,7 +1,8 @@
 'use strict';
 
 const handlers = {
-	camera: require('./camera')
+	camera: require('./camera'),
+	highlight: require('./highlight')
 };
 
 module.exports = function(state) {

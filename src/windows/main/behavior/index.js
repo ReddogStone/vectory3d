@@ -12,6 +12,6 @@ module.exports = function(canvas, state, hitTest, actions) {
 	return Behavior.first(
 		CameraBehavior(canvas, state, actions),	
 		CreateBehavior(state),
-		HighlightBehavior(canvas, state, hitTest)
+		HighlightBehavior(canvas, state, hitTest, actions)
 	);
 };
