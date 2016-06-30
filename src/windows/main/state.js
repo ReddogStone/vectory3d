@@ -21,10 +21,15 @@ module.exports = function(canvas) {
 	const view = Store.dependent([camera.pos, camera.target, camera.up], mat4.lookAt, 'camera.view');
 	const projection = Store.dependent([camera.fov, camera.aspect, camera.near, camera.far], mat4.perspective, 'camera.perspective')
 
+	let indices = {};
+	Object.keys(Type).forEach(function(type) { indices[type] = 1; });
+
 	return {
 		base: {
 			camera: camera,
-			highlighted: Store.source(null, 'highlighted')
+			highlighted: Store.source(null, 'highlighted'),
+			objects: Store.source([], 'objects'),
+			indices: Store.source(indices, 'indices')
 		},
 		camera: {
 			get pos() { return camera.pos() },

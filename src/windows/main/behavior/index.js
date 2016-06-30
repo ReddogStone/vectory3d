@@ -11,7 +11,7 @@ const HighlightBehavior = require('./highlight');
 module.exports = function(canvas, state, hitTest, actions) {
 	return Behavior.first(
 		CameraBehavior(canvas, state, actions),	
-		ConsoleBehavior(state),
+		ConsoleBehavior(state, actions),
 		HighlightBehavior(canvas, state, hitTest, actions)
 	);
 };

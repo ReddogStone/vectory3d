@@ -9,8 +9,9 @@ const Color = require('../../../../jabaku/engine/color');
 
 const Type = require('../../../enums/geometry-type');
 const Prefix = require('../../../enums/prefix');
+const InstructionType = require('../../../enums/instruction-type');
 
-module.exports = function(state) {
+module.exports = function(state, actions) {
 	function addObject(type, obj, color, name) {
 		let prefix = Prefix[type];
 		let index = state.indices[type]++;
@@ -109,14 +110,14 @@ module.exports = function(state) {
 	}
 
 	const factories = {
-		point: {
+		[InstructionType.POINT]: {
 			type: Type.POINT,
 			args: ['number', 'number', 'number'],
 			update: function(obj, x, y, z) {
 				obj.pos = vec3(x, y, z);
 			}
 		},
-		line2Points: {
+		[InstructionType.LINE_2_POINTS]: {
 			type: Type.LINE,
 			args: ['vector|point', 'vector|point'],
 			update: function(obj, p1, p2) {
@@ -130,7 +131,7 @@ module.exports = function(state) {
 				obj.dir = dir;
 			}
 		},
-		plane3Points: {
+		[InstructionType.PLANE_3_POINTS]: {
 			type: Type.PLANE,
 			args: ['vector|point', 'vector|point', 'vector|point'],
 			update: function(obj, p1, p2, p3) {
@@ -150,7 +151,7 @@ module.exports = function(state) {
 				obj.distance = d;
 			}
 		},
-		sphere: {
+		[InstructionType.SPHERE]: {
 			type: Type.SPHERE,
 			args: ['vector|point', 'number'],
 			update: function(obj, p, r) {
