@@ -2,7 +2,7 @@
 
 const handlers = {
 	camera: require('./camera'),
-	highlight: require('./highlight')
+	highlight: require('./highlight'),
 	objects: require('./objects')
 };
 

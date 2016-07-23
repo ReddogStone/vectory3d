@@ -10,23 +10,12 @@ const Color = require('../../../../jabaku/engine/color');
 const Type = require('../../../enums/geometry-type');
 const Prefix = require('../../../enums/prefix');
 const InstructionType = require('../../../enums/instruction-type');
+const DependencyType = require('../../../enums/dependency-type');
 
 module.exports = function(state, actions) {
-	function addObject(type, obj, color, name) {
-		let prefix = Prefix[type];
-		let index = state.indices[type]++;
-		
-		obj.type = type;
-		obj.id = `${prefix}${index}`;
-		obj.name = name || obj.id;
-		obj.color = color ? Color(color) : Color.random();
-
-		state.objects[obj.id] = obj;
-		return obj.id;
-	}
-
 	function objectByName(name) {
-		return Object.keys(state.objects).map(id => state.objects[id]).find(obj => obj.name === name);
+		let objects = state.base.objects();
+		return Object.keys(objects).map(id => objects[id]).find(obj => obj.name === name);
 	}
 
 	function getConstDependency(argNode) {
@@ -68,8 +57,8 @@ module.exports = function(state, actions) {
 	}
 
 	function checkGeometryType(dependency, geometryType) {
-		return (dependency.type === DependencyType.OBJECT) &&
-			state.objects[dependency.id] && state.objects[dependency.id].type === geometryType;
+		let objects = state.base.objects();
+		return (dependency.type === DependencyType.OBJECT) && objects[dependency.id] && (objects[dependency.id].type === geometryType);
 	}
 
 	function checkType(dependency, type) {
@@ -164,61 +153,6 @@ module.exports = function(state, actions) {
 		}
 	};
 
-	const getters = {
-		[Type.POINT]: obj => [vec3(obj.pos).toArray()],
-		[Type.LINE]: obj => [vec3(obj.pos).toArray(), vec3(obj.dir).toArray()],
-		[Type.PLANE]: obj => [vec3(obj.normal).toArray(), obj.distance],
-		[Type.SPHERE]: obj => [vec3(obj.center).toArray(), obj.radius]
-	};
-
-	const DependencyType = {
-		CONST: 'const',
-		VARIABLE: 'variable',
-		OBJECT: 'object'
-	};
-
-	const evaluators = {
-		[DependencyType.CONST]: dep => [dep.value],
-		[DependencyType.VARIABLE]: dep => [dep.eval(state.variables)],
-		[DependencyType.OBJECT]: function(dep) {
-			let obj = state.objects[dep.id];
-			assert(obj, `Dependency does not exist "${dep.id}"`);
-			return getters[obj.type](obj);
-		}
-	};
-
-	const evaluateDependencies = dependencies => [].concat(...dependencies.map(dep => evaluators[dep.type](dep)));
-
-	function forEachParent(obj, func) {
-		let parents = obj.dependencies.filter(dep => dep.type === DependencyType.OBJECT).map(dep => state.objects[dep.id]);
-		parents.forEach(func);
-	}
-
-	function removeChild(obj) {
-		forEachParent(obj, function(parent) {
-			delete parent.children[obj.id];
-		});
-	}
-
-	function addChild(obj) {
-		forEachParent(obj, function(parent) {
-			parent.children[obj.id] = true;
-		});
-	}
-
-	function updateObject(obj) {
-		let factory = factories[obj.instruction];
-		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);		
-
-		factory.update(obj, ...evaluateDependencies(obj.dependencies));
-
-		Object.keys(obj.children).forEach(function(childId) {
-			let child = state.objects[childId];
-			assert(child, `Child object does not exist: "${childId}"`);
-			updateObject(child);
-		});
-	}
-
 	function update(id, args) {
 		let obj = state.objects[id];
 		assert(obj, `Object does not exist: "${id}"`);
@@ -255,32 +189,11 @@ module.exports = function(state, actions) {
 			let factory = factories[instructionName];
 
 			let { dependencies, rest } = getDependencies(node.args, factory.args);
-
-			let obj = {
-				dependencies: dependencies,
-				instruction: instructionName,
-				children: {}
-			};
-
-			let variableDependencies = obj.dependencies.filter(dep => dep.type === DependencyType.VARIABLE);
-			variableDependencies.forEach(function(dependency) {
-				dependency.variables.forEach(function(variable) {
-					if (state.variables[variable] === undefined) {
-						state.variables[variable] = 0;
-					}
-				});
-			});
-
-			factory.update(obj, ...evaluateDependencies(obj.dependencies));
-
 			let color = rest[0];
 			let name = rest[1];
-			let id = addObject(factory.type, obj, color && color.eval(), name && name.eval());
 
-			addChild(obj);
-
-			console.log(obj);
-			return id;
+			actions.objects.create(instructionName, dependencies, color, name);
+			return;
 		} else if (node.isAssignmentNode) {
 			if (node.object.isSymbolNode) {
 				let variableName = node.object.name;

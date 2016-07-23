@@ -44,7 +44,10 @@ const sphereMesh = Mesh.make(Geometry.createSphereData(20));
 const cylinderMesh = Mesh.make(Geometry.createCylinderData());
 const quadMesh = Mesh.make(Geometry.createQuadData());
 
-const geometries = type => Object.keys(state.objects).map(id => state.objects[id]).filter(obj => obj.type === type);
+function geometries(type) {
+	let objects = state.base.objects();
+	return Object.keys(objects).map(id => objects[id]).filter(obj => obj.type === type);
+}
 
 // TODO: remove, this is to put less strain on the hardware during development
 requestAnimationFrame = function(callback) {
