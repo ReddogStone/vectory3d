@@ -87,10 +87,10 @@ module.exports = function(state) {
 	}
 
 	function updateObject(obj) {
-		let factory = factories[obj.instruction];
+		let factory = Factories[obj.instruction];
 		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);		
 
-		factory.update(obj, ...evaluateDependencies(obj.dependencies));
+		factory.update(obj, ...DependencyUtils.eval(obj.dependencies, state));
 
 		let objects = state.base.objects();
 		Object.keys(obj.children).forEach(function(childId) {
@@ -111,6 +111,7 @@ module.exports = function(state) {
 				type: factory.type,
 				instruction: instruction,
 				dependencies: dependencies,
+				children: {},
 				color: color ? Color(color) : Color.random(),
 				name: name || id
 			};
@@ -128,6 +129,7 @@ module.exports = function(state) {
 				});
 
 			factory.update(obj, ...DependencyUtils.eval(dependencies, state));
+			addChild(obj);
 
 			return [
 				[state.base.objects, Object.assign({}, state.base.objects(), { [id]: obj })],

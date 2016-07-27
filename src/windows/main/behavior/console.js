@@ -154,17 +154,12 @@ module.exports = function(state, actions) {
 	};
 
 	function update(id, args) {
-		let obj = state.objects[id];
-		assert(obj, `Object does not exist: "${id}"`);
+		let obj = state.base.objects()[id];
+		assert(obj, `No such object: "${id}"`);
 
 		let factory = factories[obj.instruction];
-		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);
-
-		removeChild(obj);
-		obj.dependencies = getDependencies(args, factory.args).dependencies;
-		addChild(obj);
-
-		updateObject(obj);
+		let dependencies = getDependencies(args, factory.args).dependencies;
+		actions.objects.update(id, dependencies);
 	}
 
 	const instruction = function*() {
