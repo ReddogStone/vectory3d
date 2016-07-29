@@ -13,14 +13,14 @@ const Getters = {
 
 const Evaluators = {
 	[DependencyType.CONST]: dep => [dep.value],
-	[DependencyType.VARIABLE]: (dep, state) => [dep.eval(state.base.variables())],
-	[DependencyType.OBJECT]: function(dep, state) {
-		let obj = state.base.objects()[dep.id];
+	[DependencyType.VARIABLE]: (dep, objects, variables) => [dep.eval(variables)],
+	[DependencyType.OBJECT]: function(dep, objects) {
+		let obj = objects[dep.id];
 		assert(obj, `Dependency does not exist "${dep.id}"`);
 		return Getters[obj.type](obj);
 	}
 };
 
 module.exports = {
-	eval: (dependencies, state) => [].concat(...dependencies.map(dep => Evaluators[dep.type](dep, state)))
+	eval: (dependencies, objects, variables) => [].concat(...dependencies.map(dep => Evaluators[dep.type](dep, objects, variables)))
 };

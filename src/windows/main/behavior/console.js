@@ -191,17 +191,7 @@ module.exports = function(state, actions) {
 			return;
 		} else if (node.isAssignmentNode) {
 			if (node.object.isSymbolNode) {
-				let variableName = node.object.name;
-				let value = node.value.eval().valueOf();
-				state.variables[variableName] = value;
-
-				Object.keys(state.objects).forEach(function(id) {
-					let obj = state.objects[id];
-					let dependsOnVariable = obj.dependencies.some(d => d.type === DependencyType.VARIABLE && d.variables.indexOf(variableName) >= 0);
-					if (dependsOnVariable) {
-						updateObject(obj);
-					}
-				});
+				actions.variables.assign(node.object.name, node.value.eval().valueOf());
 			}
 			return;
 		}
