@@ -3,7 +3,8 @@
 const handlers = {
 	camera: require('./camera'),
 	highlight: require('./highlight'),
-	objects: require('./objects')
+	objects: require('./objects'),
+	variables: require('./variables')
 };
 
 module.exports = function(state) {
