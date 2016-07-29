@@ -90,7 +90,7 @@ module.exports = function(state) {
 		let factory = Factories[obj.instruction];
 		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);		
 
-		factory.update(obj, ...DependencyUtils.eval(obj.dependencies, state));
+		factory.update(obj, ...DependencyUtils.eval(obj.dependencies, state.base.objects(), state.base.variables()));
 
 		let objects = state.base.objects();
 		Object.keys(obj.children).forEach(function(childId) {
@@ -116,25 +116,24 @@ module.exports = function(state) {
 				name: name || id
 			};
 
-			let oldVars = state.base.variables();
-			let newVars = {};
+			let vars = Object.assign({}, state.base.variables());
 			dependencies
 				.filter(dep => dep.type === DependencyType.VARIABLE)
 				.forEach(function(dependency) {
 					dependency.variables.forEach(function(variable) {
-						if (oldVars[variable] === undefined) {
-							newVars[variable] = 0;
+						if (vars[variable] === undefined) {
+							vars[variable] = 0;
 						}
 					});
 				});
 
-			factory.update(obj, ...DependencyUtils.eval(dependencies, state));
+			factory.update(obj, ...DependencyUtils.eval(dependencies, state.base.objects(), vars));
 			addChild(obj);
 
 			return [
 				[state.base.objects, Object.assign({}, state.base.objects(), { [id]: obj })],
 				[state.base.indices, Object.assign({}, state.base.indices(), { [factory.type]: index + 1 } )],
-				[state.base.variables, Object.assign({}, oldVars, newVars)]
+				[state.base.variables, vars]
 			]
 		},
 		update: function(id, dependencies) {
