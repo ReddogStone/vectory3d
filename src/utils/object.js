@@ -60,6 +60,19 @@ const Factories = {
 };
 
 module.exports = {
+	init: function(instruction, dependencies, objects, variables) {
+		let factory = Factories[instruction];
+
+		let obj = {
+			type: factory.type,
+			instruction: instruction,
+			dependencies: dependencies
+		};
+
+		factory.update(obj, ...DependencyUtils.eval(dependencies, objects, variables));
+
+		return obj;
+	},
 	update: function updateObject(objects, variables, obj) {
 		let factory = Factories[obj.instruction];
 		assert(factory, `Object created by unknown instruction: "${obj.instruction}"`);		
@@ -69,7 +82,7 @@ module.exports = {
 		Object.keys(obj.children).forEach(function(childId) {
 			let child = objects[childId];
 			assert(child, `Child object does not exist: "${childId}"`);
-			updateObject(child);
+			updateObject(objects, variables, child);
 		});
 	}
 };
